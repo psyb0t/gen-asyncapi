@@ -2,15 +2,6 @@ name: pipeline
 
 on:
   push:
-  # Weekly run that refreshes the imported-by badge. pkg.go.dev updates its
-  # importer count over days, so once a week is enough. It runs the whole
-  # pipeline because the badge job republishes every badge from that run's
-  # results, coverage included.
-  #
-  # The minute and hour come from a hash of the repo name, so this repo's run
-  # does not queue at the same moment as every other scheduled job.
-  schedule:
-    - cron: "13 2 * * 4"
   workflow_dispatch:
 
 jobs:
@@ -36,7 +27,6 @@ jobs:
     uses: psyb0t/reusable-github-workflows/.github/workflows/create-badges.yml@master
     with:
       coverage: true
-      importers: true
 
   # Publishes a GitHub release for each tag once the checks pass.
   release:

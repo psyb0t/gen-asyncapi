@@ -5,11 +5,11 @@
 [![coverage](https://raw.githubusercontent.com/psyb0t/gen-asyncapi/badges/coverage.svg)](https://github.com/psyb0t/gen-asyncapi/actions/workflows/pipeline.yml)
 [![version](https://raw.githubusercontent.com/psyb0t/gen-asyncapi/badges/version.svg)](https://github.com/psyb0t/gen-asyncapi/tags)
 [![license](https://raw.githubusercontent.com/psyb0t/gen-asyncapi/badges/license.svg)](LICENSE)
-[![imported by](https://raw.githubusercontent.com/psyb0t/gen-asyncapi/badges/importers.svg)](https://github.com/psyb0t/gen-asyncapi/blob/badges/importers.md)
-
 Feed it an AsyncAPI 3 document and it spits out Go or TypeScript types, strict JSON decoding and a client for your WebSocket API. Run it from `go generate` with a small config file and the path to your spec, and the generated file lands next to your code.
 
 Decoding is strict. A frame either matches its schema or you get an error that names every message it tried and why each one said no.
+
+Spec loading comes from [go-asyncapi](https://github.com/psyb0t/go-asyncapi). Grab that one directly if you want to read AsyncAPI 3 documents in Go without generating anything.
 
 ## Contents
 
