@@ -1,13 +1,13 @@
-# gogen-asyncapi
+# gen-asyncapi
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/psyb0t/gogen-asyncapi.svg)](https://pkg.go.dev/github.com/psyb0t/gogen-asyncapi)
-[![CI](https://github.com/psyb0t/gogen-asyncapi/actions/workflows/pipeline.yml/badge.svg?branch=main)](https://github.com/psyb0t/gogen-asyncapi/actions/workflows/pipeline.yml)
-[![coverage](https://raw.githubusercontent.com/psyb0t/gogen-asyncapi/badges/coverage.svg)](https://github.com/psyb0t/gogen-asyncapi/actions/workflows/pipeline.yml)
-[![version](https://raw.githubusercontent.com/psyb0t/gogen-asyncapi/badges/version.svg)](https://github.com/psyb0t/gogen-asyncapi/tags)
-[![license](https://raw.githubusercontent.com/psyb0t/gogen-asyncapi/badges/license.svg)](LICENSE)
-[![imported by](https://raw.githubusercontent.com/psyb0t/gogen-asyncapi/badges/importers.svg)](https://github.com/psyb0t/gogen-asyncapi/blob/badges/importers.md)
+[![Go Reference](https://pkg.go.dev/badge/github.com/psyb0t/gen-asyncapi.svg)](https://pkg.go.dev/github.com/psyb0t/gen-asyncapi)
+[![CI](https://github.com/psyb0t/gen-asyncapi/actions/workflows/pipeline.yml/badge.svg?branch=main)](https://github.com/psyb0t/gen-asyncapi/actions/workflows/pipeline.yml)
+[![coverage](https://raw.githubusercontent.com/psyb0t/gen-asyncapi/badges/coverage.svg)](https://github.com/psyb0t/gen-asyncapi/actions/workflows/pipeline.yml)
+[![version](https://raw.githubusercontent.com/psyb0t/gen-asyncapi/badges/version.svg)](https://github.com/psyb0t/gen-asyncapi/tags)
+[![license](https://raw.githubusercontent.com/psyb0t/gen-asyncapi/badges/license.svg)](LICENSE)
+[![imported by](https://raw.githubusercontent.com/psyb0t/gen-asyncapi/badges/importers.svg)](https://github.com/psyb0t/gen-asyncapi/blob/badges/importers.md)
 
-Feed it an AsyncAPI 3 document and it spits out Go types, strict JSON codecs and a client for your WebSocket API. Run it from `go generate` with a small config file and the path to your spec, and the generated file lands next to your code.
+Feed it an AsyncAPI 3 document and it spits out Go or TypeScript types, strict JSON decoding and a client for your WebSocket API. Run it from `go generate` with a small config file and the path to your spec, and the generated file lands next to your code.
 
 Decoding is strict. A frame either matches its schema or you get an error that names every message it tried and why each one said no.
 
@@ -25,6 +25,7 @@ Decoding is strict. A frame either matches its schema or you get an error that n
   - [Receiving](#receiving)
   - [Telling messages apart](#telling-messages-apart)
   - [Servers and channels](#servers-and-channels)
+- [TypeScript](#typescript)
 - [What gets generated](#what-gets-generated)
 - [Example packages](#example-packages)
 - [Development](#development)
@@ -32,16 +33,14 @@ Decoding is strict. A frame either matches its schema or you get an error that n
 
 ## Install
 
-As a tool in your module, so `go tool gogen-asyncapi` runs the version your `go.mod` pins:
-
 ```sh
-go get -tool github.com/psyb0t/gogen-asyncapi/cmd/gogen-asyncapi@latest
+go install github.com/psyb0t/gen-asyncapi/cmd/gen-asyncapi@latest
 ```
 
-Or as a binary:
+As a Go tool in your module, so `go tool gen-asyncapi` runs the version your `go.mod` pins:
 
 ```sh
-go install github.com/psyb0t/gogen-asyncapi/cmd/gogen-asyncapi@latest
+go get -tool github.com/psyb0t/gen-asyncapi/cmd/gen-asyncapi@latest
 ```
 
 ## Quick start
@@ -58,20 +57,21 @@ output: chat.gen.go
 // gen.go
 package chat
 
-//go:generate go tool gogen-asyncapi --config=config.yaml ../../api/asyncapi.yaml
+//go:generate go tool gen-asyncapi --config=config.yaml ../../api/asyncapi.yaml
 ```
 
-Run `go generate ./...` and `chat.gen.go` appears. The spec is the last argument, and paths are relative to the directory `go generate` runs in. `-package` and `-o` override the config, or stand in for it:
+Run `go generate ./...` and `chat.gen.go` appears. The spec is the last argument, and paths are relative to the directory `go generate` runs in. `-language`, `-package` and `-o` override the config, or stand in for it:
 
 ```sh
-gogen-asyncapi -package=chat -o=chat.gen.go asyncapi.yaml
+gen-asyncapi -package=chat -o=chat.gen.go asyncapi.yaml
 ```
 
 ## Config
 
 ```yaml
-package: chat             # Go package name, required
-output: chat.gen.go       # defaults to asyncapi.gen.go
+language: go              # go or typescript, defaults to go
+package: chat             # Go package name, required for Go
+output: chat.gen.go       # defaults to asyncapi.gen.go, or asyncapi.gen.ts
 generate:
   models: true            # types, codecs, validation (on by default)
   client: true            # decoding, Handler, Dispatch, Client (on by default, needs models)
@@ -311,6 +311,72 @@ kitchensink.CommandsAddress("acme")                     // "tenants/acme/command
 kitchensink.CommandsAddressTemplate                     // "tenants/{tenantId}/commands"
 ```
 
+## TypeScript
+
+Set `language: typescript`, or pass `-language=typescript`, and the same spec turns into one `.ts` file with zero dependencies. A TypeScript project needs no Go module, just Go installed. Run it straight from the repo:
+
+```sh
+go run github.com/psyb0t/gen-asyncapi/cmd/gen-asyncapi@latest -language=typescript -o=src/chat.gen.ts asyncapi.yaml
+```
+
+Pin a version instead of `@latest` and put the line in a `package.json` script. A Go server and its web client can generate from one spec in the same `gen.go`:
+
+```go
+//go:generate go tool gen-asyncapi --config=config.yaml chat.yaml
+//go:generate go tool gen-asyncapi --config=config.yaml -language=typescript -o=chat.gen.ts chat.yaml
+```
+
+Schemas become interfaces and unions. Const properties are literal types, so a `oneOf` with a discriminator narrows in a `switch`:
+
+```ts
+export interface JoinRequest {
+  type: "join";
+  id: string;
+  room: string;
+  nickname?: string;
+}
+
+export type ServerEvent = MessagePosted | MemberJoined | Ping;
+export type MemberRole = "owner" | "member" | "guest";
+```
+
+Every type gets a `validate<Type>` function. It throws a `ValidationError` naming the bad value, and narrows the type when the value passes:
+
+```ts
+const value: unknown = JSON.parse(text);
+
+validateJoinRequest(value); // a bad room throws with err.path "JoinRequest.room"
+value.room;                 // typed from here on
+```
+
+The client takes anything with `send` and `close`, so a browser `WebSocket` works as it is. Every handler method is optional:
+
+```ts
+const socket = new WebSocket(ServerProductionURL);
+const client = new Client(socket);
+
+const handler: Handler = {
+  handleEvent: (event) => {
+    if (event.type === "message.posted") {
+      render(event.author.id, event.text);
+    }
+  },
+  handleUnknownMessage: (_data, error) => {
+    report(error);
+  },
+};
+
+socket.addEventListener("message", (message) => {
+  client.receive(message.data, handler).catch(report);
+});
+
+await client.joinRoom({ type: "join", id: crypto.randomUUID(), room: "lobby" });
+```
+
+Without `handleUnknownMessage`, `receive` rejects with the `UnknownMessageError` or `AmbiguousMessageError`. `decodeReceivedMessage(text)` and `dispatch(handler, message)` do the same two steps by hand.
+
+The file type-checks under `strict` plus `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `noUnusedLocals`, `verbatimModuleSyntax` and `erasableSyntaxOnly`. It sticks to ES2020, so it runs in browsers and straight from Node.js.
+
 ## What gets generated
 
 | Spec | Go |
@@ -326,14 +392,16 @@ kitchensink.CommandsAddressTemplate                     // "tenants/{tenantId}/c
 | server | `Server<Name>URL`, plus `URLTemplate` and `URLWith` for variables |
 | channel | `<Channel>AddressTemplate`, plus `<Channel>Address(...)` for parameters |
 
+The TypeScript file has the same pieces under TypeScript names: `validate<Type>`, `<Type>Values` for enums, `server<Name>URLWith(...)`, `<channel>Address(...)`, `decodeReceivedMessage`, `dispatch` and `Client.receive`.
+
 Every object and keyword, one row each, is in [docs/spec-coverage.md](docs/spec-coverage.md).
 
 ## Example packages
 
-- [examples/chat](examples/chat): the whole client, tested end to end over an in-memory transport.
+- [examples/chat](examples/chat): the whole client in Go and TypeScript, tested end to end over an in-memory transport.
 - [examples/shapes](examples/shapes): schema edge cases, plus an OpenAPI 3.0 payload with `nullable` and a discriminator mapping.
 - [examples/kitchensink](examples/kitchensink): every AsyncAPI 3.0 object in one document, valid against the official JSON Schema.
-- [examples/official](examples/official): the 19 examples from the AsyncAPI spec repository, generated as they are. CI builds them and checks they match the generator.
+- [examples/official](examples/official): the 19 examples from the AsyncAPI spec repository, generated as they are in both languages. CI builds and type-checks them and checks they match the generator.
 
 ## Development
 
@@ -343,9 +411,12 @@ Everything runs in the `Dockerfile.dev` image. You need Docker and Make.
 make help           # list targets
 make generate       # regenerate the examples
 make lint           # shellcheck, shfmt, go fix, golangci-lint
-make test-coverage  # go test -race with a 90% coverage gate
-make sec            # gitleaks, govulncheck, semgrep
+make test-coverage  # go test -race with a 90% coverage gate, then make test-ts
+make test-ts        # tsc on the generated TypeScript, then its node:test suites
+make sec            # gitleaks, govulncheck, pnpm audit, semgrep
 ```
+
+The TypeScript checks run `tsc` and Node.js types from `pnpm-lock.yaml`, installed in the dev image. The `pkg-*` targets, such as `make pkg-add PKG=name@version`, change them.
 
 ## License
 

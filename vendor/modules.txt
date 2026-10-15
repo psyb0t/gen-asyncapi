@@ -751,6 +751,9 @@ github.com/psyb0t/ctxerrors/commerr
 # github.com/psyb0t/ctxscope v1.0.3
 ## explicit; go 1.26
 github.com/psyb0t/ctxscope
+# github.com/psyb0t/go-asyncapi v0.1.0
+## explicit; go 1.26.9
+github.com/psyb0t/go-asyncapi
 # github.com/psyb0t/slogging v1.7.1
 ## explicit; go 1.26
 github.com/psyb0t/slogging/handlers

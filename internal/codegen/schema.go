@@ -3,7 +3,7 @@ package codegen
 import (
 	"strings"
 
-	"github.com/psyb0t/gogen-asyncapi/internal/spec"
+	asyncapi "github.com/psyb0t/go-asyncapi"
 )
 
 const (
@@ -23,7 +23,7 @@ const (
 // schemaInfo is the JSON Schema keywords the generator understands, read once
 // from a dereferenced schema object.
 type schemaInfo struct {
-	object *spec.Object
+	object *asyncapi.Object
 
 	types       []string
 	nullable    bool
@@ -35,7 +35,7 @@ type schemaInfo struct {
 	hasConst bool
 	constant any
 
-	properties           *spec.Object
+	properties           *asyncapi.Object
 	required             map[string]bool
 	additionalProperties any
 	hasAdditional        bool
@@ -47,7 +47,7 @@ type schemaInfo struct {
 	allOf []any
 
 	discriminatorProperty string
-	discriminatorMapping  *spec.Object
+	discriminatorMapping  *asyncapi.Object
 
 	minimum          any
 	maximum          any
@@ -66,8 +66,8 @@ type schemaInfo struct {
 	uniqueItems       bool
 	minProperties     any
 	maxProperties     any
-	patternProperties *spec.Object
-	propertyNames     *spec.Object
+	patternProperties *asyncapi.Object
+	propertyNames     *asyncapi.Object
 	dependentRequired map[string][]string
 
 	deprecated bool
@@ -109,7 +109,7 @@ func unenforcedKeywords() []string {
 	}
 }
 
-func readSchema(object *spec.Object) *schemaInfo {
+func readSchema(object *asyncapi.Object) *schemaInfo {
 	info := &schemaInfo{
 		object:      object,
 		title:       object.String("title"),
@@ -131,7 +131,7 @@ func readSchema(object *spec.Object) *schemaInfo {
 }
 
 // readTypeKeywords reads type, nullable, enum and const.
-func readTypeKeywords(info *schemaInfo, object *spec.Object) {
+func readTypeKeywords(info *schemaInfo, object *asyncapi.Object) {
 	switch typed := object.Values["type"].(type) {
 	case string:
 		info.types = []string{typed}
@@ -158,7 +158,7 @@ func readTypeKeywords(info *schemaInfo, object *spec.Object) {
 
 // readStructureKeywords reads properties, required, items, the composition
 // keywords and the discriminator.
-func readStructureKeywords(info *schemaInfo, object *spec.Object) {
+func readStructureKeywords(info *schemaInfo, object *asyncapi.Object) {
 	info.properties = object.Object("properties")
 
 	if requiredNames, ok := object.Values["required"].([]any); ok {
@@ -180,7 +180,7 @@ func readStructureKeywords(info *schemaInfo, object *spec.Object) {
 	switch discriminator := object.Values["discriminator"].(type) {
 	case string:
 		info.discriminatorProperty = discriminator
-	case *spec.Object:
+	case *asyncapi.Object:
 		info.discriminatorProperty = discriminator.String("propertyName")
 		info.discriminatorMapping = discriminator.Object("mapping")
 	}
@@ -188,7 +188,7 @@ func readStructureKeywords(info *schemaInfo, object *spec.Object) {
 
 // readConstraintKeywords reads the validation keywords the generated code
 // checks.
-func readConstraintKeywords(info *schemaInfo, object *spec.Object) {
+func readConstraintKeywords(info *schemaInfo, object *asyncapi.Object) {
 	info.minimum = object.Values["minimum"]
 	info.maximum = object.Values["maximum"]
 	info.exclusiveMinimum = object.Values["exclusiveMinimum"]
@@ -209,7 +209,7 @@ func readConstraintKeywords(info *schemaInfo, object *spec.Object) {
 }
 
 // readAnnotationKeywords reads deprecated, default and examples.
-func readAnnotationKeywords(info *schemaInfo, object *spec.Object) {
+func readAnnotationKeywords(info *schemaInfo, object *asyncapi.Object) {
 	info.deprecated, _ = object.Values["deprecated"].(bool)
 	info.defaultVal, info.hasDefault = object.Get("default")
 	info.examples, _ = object.Values["examples"].([]any)
@@ -217,7 +217,7 @@ func readAnnotationKeywords(info *schemaInfo, object *spec.Object) {
 
 // unenforcedFor lists the keywords on a schema that the generated code does
 // not check.
-func unenforcedFor(info *schemaInfo, object *spec.Object) []string {
+func unenforcedFor(info *schemaInfo, object *asyncapi.Object) []string {
 	var unenforced []string
 
 	for _, keyword := range unenforcedKeywords() {
@@ -246,7 +246,7 @@ func unenforcedFor(info *schemaInfo, object *spec.Object) []string {
 
 // readDependentRequired reads dependentRequired, and the draft 7
 // "dependencies" keyword in its property-list form.
-func readDependentRequired(object *spec.Object) map[string][]string {
+func readDependentRequired(object *asyncapi.Object) map[string][]string {
 	result := map[string][]string{}
 
 	for _, keyword := range []string{"dependentRequired", "dependencies"} {

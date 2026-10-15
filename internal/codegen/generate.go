@@ -12,11 +12,11 @@ import (
 
 	"github.com/psyb0t/ctxerrors"
 	"github.com/psyb0t/ctxerrors/commerr"
-	"github.com/psyb0t/gogen-asyncapi/internal/spec"
+	asyncapi "github.com/psyb0t/go-asyncapi"
 	"golang.org/x/tools/imports"
 )
 
-//go:embed templates/*.tmpl
+//go:embed templates/*
 var templateFiles embed.FS
 
 const (
@@ -26,9 +26,23 @@ const (
 	payloadSuffix = "Payload"
 )
 
-// reservedNames are identifiers the generated client uses itself, so schema
+// reservedNames are identifiers the generated code uses itself, so schema
 // types never take them.
-func reservedNames() []string {
+func reservedNames(language Language) []string {
+	if language == LanguageTypeScript {
+		return []string{
+			"Client",
+			"Handler",
+			"Transport",
+			"ReceivedMessage",
+			"ValidationError",
+			"UnknownMessageError",
+			"AmbiguousMessageError",
+			"RtMatcher",
+			"RtCandidate",
+		}
+	}
+
 	return []string{
 		"Client",
 		"NewClient",
@@ -82,11 +96,19 @@ type messageData struct {
 	CorrelationLocation string
 	// Fallback marks a message whose payload has no schema to check.
 	Fallback bool
+
+	message *asyncapi.Message
+	payload *typeRef
+	headers *typeRef
 }
 
 type matcherData struct {
 	Pointer string
 	Value   string
+
+	// pointer is the unquoted JSON pointer and value the expected JSON text.
+	pointer string
+	value   string
 }
 
 type sendData struct {
@@ -94,17 +116,19 @@ type sendData struct {
 	PayloadType string
 	Message     string
 	Doc         []string
+
+	payload *typeRef
 }
 
-// Generate renders the Go source for the AsyncAPI document at specPath.
-// config must have passed Validate.
+// Generate renders the Go or TypeScript source for the AsyncAPI document at
+// specPath. config must have passed Validate.
 func Generate(config *Config, specPath string) ([]byte, error) {
-	document, err := spec.Load(specPath)
+	document, err := asyncapi.Load(specPath)
 	if err != nil {
 		return nil, ctxerrors.Wrapf(err, "load spec %s", specPath)
 	}
 
-	b := newBuilder(document.Resolver, reservedNames()...)
+	b := newBuilder(document.Resolver, reservedNames(config.Language)...)
 
 	messages, byLocation, err := buildMessages(b, document, config)
 	if err != nil {
@@ -135,7 +159,15 @@ func Generate(config *Config, specPath string) ([]byte, error) {
 	}
 
 	if config.Generate.Client {
-		data.Received, data.Sends = buildOperations(document, byLocation)
+		data.Received, data.Sends = buildOperations(
+			document,
+			byLocation,
+			config.Language,
+		)
+	}
+
+	if config.Language == LanguageTypeScript {
+		return renderTypeScript(data, b.decls)
 	}
 
 	for _, d := range b.decls {
@@ -147,12 +179,12 @@ func Generate(config *Config, specPath string) ([]byte, error) {
 
 func buildMessages(
 	b *builder,
-	document *spec.Document,
+	document *asyncapi.Document,
 	config *Config,
-) ([]messageData, map[spec.Location]messageData, error) {
-	names := newNameSet(reservedNames()...)
+) ([]messageData, map[asyncapi.Location]messageData, error) {
+	names := newNameSet(reservedNames(config.Language)...)
 	wireNames := newNameSet()
-	byLocation := map[spec.Location]messageData{}
+	byLocation := map[asyncapi.Location]messageData{}
 	configured := map[string]bool{}
 
 	result := make([]messageData, 0, len(document.Messages))
@@ -187,7 +219,7 @@ func buildMessages(
 // assembles its template data.
 func buildMessage(
 	b *builder,
-	message *spec.Message,
+	message *asyncapi.Message,
 	config *Config,
 	names *nameSet,
 	wireNames *nameSet,
@@ -199,9 +231,14 @@ func buildMessage(
 		return messageData{}, err
 	}
 
-	headersType, err := messageHeadersType(b, message, goName)
+	headers, err := messageHeaders(b, message, goName)
 	if err != nil {
 		return messageData{}, err
+	}
+
+	headersType := ""
+	if headers != nil {
+		headersType = headers.expr
 	}
 
 	// Message names identify received messages, so two messages sharing a
@@ -228,6 +265,9 @@ func buildMessage(
 			messageDoc(message, payload.expr, headersType),
 		),
 		Matchers: matchers,
+		message:  message,
+		payload:  payload,
+		headers:  headers,
 	}
 
 	if message.CorrelationIDLocation != "" {
@@ -243,7 +283,7 @@ func buildMessage(
 // when the message has no payload schema.
 func messagePayload(
 	b *builder,
-	message *spec.Message,
+	message *asyncapi.Message,
 	goName string,
 ) (*typeRef, error) {
 	if message.Payload == nil {
@@ -266,15 +306,15 @@ func messagePayload(
 	return payload, nil
 }
 
-// messageHeadersType returns the Go type expression of a message's
-// application headers, or "" when it declares none.
-func messageHeadersType(
+// messageHeaders returns the type of a message's application headers, or nil
+// when it declares none.
+func messageHeaders(
 	b *builder,
-	message *spec.Message,
+	message *asyncapi.Message,
 	goName string,
-) (string, error) {
+) (*typeRef, error) {
 	if message.Headers == nil {
-		return "", nil
+		return nil, nil //nolint:nilnil // no headers is not an error
 	}
 
 	headers, err := b.typeOf(
@@ -283,14 +323,14 @@ func messageHeadersType(
 		goName+"Headers",
 	)
 	if err != nil {
-		return "", ctxerrors.Wrapf(
+		return nil, ctxerrors.Wrapf(
 			err,
 			"message %s headers",
 			message.Key,
 		)
 	}
 
-	return headers.expr, nil
+	return headers, nil
 }
 
 // messageMatchers combines the configured match rules with the consts the
@@ -326,6 +366,8 @@ func messageMatchers(
 		matchers = append(matchers, matcherData{
 			Pointer: strconv.Quote(pointer),
 			Value:   strconv.Quote(string(value)),
+			pointer: pointer,
+			value:   string(value),
 		})
 	}
 
@@ -343,13 +385,15 @@ func messageMatchers(
 		matchers = append(matchers, matcherData{
 			Pointer: strconv.Quote(pointer),
 			Value:   strconv.Quote(structField.constJSON),
+			pointer: pointer,
+			value:   structField.constJSON,
 		})
 	}
 
 	return matchers, nil
 }
 
-func buildServers(document *spec.Document) []serverData {
+func buildServers(document *asyncapi.Document) []serverData {
 	names := newNameSet()
 	result := make([]serverData, 0, len(document.Servers))
 
@@ -377,7 +421,7 @@ func buildServers(document *spec.Document) []serverData {
 
 // messageDoc is the doc comment of a message constant.
 func messageDoc(
-	message *spec.Message,
+	message *asyncapi.Message,
 	payloadType, headersType string,
 ) string {
 	lines := []string{
@@ -412,7 +456,7 @@ func messageDoc(
 	return strings.TrimSpace(strings.Join(lines, "\n"))
 }
 
-func buildChannels(document *spec.Document) []channelData {
+func buildChannels(document *asyncapi.Document) []channelData {
 	names := newNameSet()
 	result := make([]channelData, 0, len(document.Channels))
 
@@ -446,17 +490,23 @@ func buildChannels(document *spec.Document) []channelData {
 // operations and from the replies to send operations) and one send method per
 // message of each send operation.
 func buildOperations(
-	document *spec.Document,
-	byLocation map[spec.Location]messageData,
+	document *asyncapi.Document,
+	byLocation map[asyncapi.Location]messageData,
+	language Language,
 ) ([]messageData, []sendData) {
+	reservedMethods := []string{"Run", "Close"}
+	if language == LanguageTypeScript {
+		reservedMethods = []string{"Close", "Receive", "Constructor"}
+	}
+
 	var (
 		received []messageData
 		sends    []sendData
-		seen     = map[spec.Location]bool{}
-		methods  = newNameSet("Run", "Close")
+		seen     = map[asyncapi.Location]bool{}
+		methods  = newNameSet(reservedMethods...)
 	)
 
-	addReceived := func(messages []*spec.Message) {
+	addReceived := func(messages []*asyncapi.Message) {
 		for _, message := range messages {
 			if seen[message.Location] {
 				continue
@@ -468,7 +518,7 @@ func buildOperations(
 	}
 
 	for _, operation := range document.Operations {
-		if operation.Action == spec.ActionReceive {
+		if operation.Action == asyncapi.ActionReceive {
 			addReceived(operation.Messages)
 
 			continue
@@ -493,6 +543,7 @@ func buildOperations(
 				Doc: commentLines(
 					firstNonEmpty(operation.Summary, operation.Description),
 				),
+				payload: data.payload,
 			})
 		}
 	}
@@ -503,7 +554,7 @@ func buildOperations(
 func render(data fileData) ([]byte, error) {
 	tmpl, err := template.New(templateName).Funcs(template.FuncMap{
 		"join": strings.Join,
-	}).ParseFS(templateFiles, "templates/*.tmpl")
+	}).ParseFS(templateFiles, "templates/"+templateName)
 	if err != nil {
 		return nil, ctxerrors.Wrap(err, "parse templates")
 	}

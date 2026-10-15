@@ -1,0 +1,5 @@
+# Third-party releases must be at least seven days old (10080 minutes) before
+# pnpm resolves them. Every install also passes --ignore-scripts.
+minimumReleaseAge: 10080
+# Keeps the package store out of the bind-mounted workspace.
+storeDir: /tmp/pnpm-store

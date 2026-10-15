@@ -1,4 +1,7 @@
 **
 !Dockerfile.dev
 !requirements-semgrep.txt
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
 .telemetry/

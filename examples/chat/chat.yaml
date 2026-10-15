@@ -2,7 +2,7 @@ asyncapi: 3.0.0
 info:
   title: Example Chat API
   version: 1.0.0
-  description: A chat room protocol used to exercise every gogen-asyncapi feature.
+  description: A chat room protocol used to exercise every gen-asyncapi feature.
 
 servers:
   production:

@@ -119,6 +119,8 @@ type field struct {
 	required bool
 	pointer  bool
 	omit     bool
+	// nullable marks a field whose schema allows null.
+	nullable bool
 
 	// constLiteral is the Go literal of a const field, filled in on marshal and
 	// checked on unmarshal. constJSON is the same value as JSON text.

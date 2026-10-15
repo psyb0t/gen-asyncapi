@@ -10,7 +10,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/psyb0t/ctxerrors/commerr"
-	"github.com/psyb0t/gogen-asyncapi/asyncapirt/gorillaws"
+	"github.com/psyb0t/gen-asyncapi/asyncapirt/gorillaws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

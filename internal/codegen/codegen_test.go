@@ -95,24 +95,34 @@ func TestGeneratedExamplesAreCurrent(t *testing.T) {
 	for _, configPath := range configs {
 		dir := filepath.Dir(configPath)
 
-		t.Run(filepath.Base(dir), func(t *testing.T) {
-			t.Parallel()
+		for _, run := range generateRuns(t, dir) {
+			name := filepath.Base(dir) + "/" + string(run.language)
 
-			config, err := LoadConfig(configPath)
-			require.NoError(t, err)
-			require.NoError(t, config.Validate())
+			t.Run(name, func(t *testing.T) {
+				t.Parallel()
 
-			generated, err := Generate(
-				config,
-				filepath.Join(dir, generateSpecArgument(t, dir)),
-			)
-			require.NoError(t, err)
+				config, err := LoadConfig(filepath.Join(dir, run.config))
+				require.NoError(t, err)
 
-			committed, err := os.ReadFile(filepath.Join(dir, config.Output))
-			require.NoError(t, err)
+				if run.language != "" {
+					config.Language = run.language
+				}
 
-			assert.Equal(t, string(committed), string(generated))
-		})
+				if run.output != "" {
+					config.Output = run.output
+				}
+
+				require.NoError(t, config.Validate())
+
+				generated, err := Generate(config, filepath.Join(dir, run.spec))
+				require.NoError(t, err)
+
+				committed, err := os.ReadFile(filepath.Join(dir, config.Output))
+				require.NoError(t, err)
+
+				assert.Equal(t, string(committed), string(generated))
+			})
+		}
 	}
 }
 
@@ -120,27 +130,63 @@ func chatSpec() string {
 	return filepath.Join("..", "..", "examples", "chat", "chat.yaml")
 }
 
-// generateSpecArgument returns the spec path the example's go:generate line
-// passes, so the test regenerates exactly what go generate does.
-func generateSpecArgument(t *testing.T, dir string) string {
+// generateRun is the arguments of one go:generate line of an example.
+type generateRun struct {
+	config   string
+	language Language
+	output   string
+	spec     string
+}
+
+// generateRuns returns every go:generate line of the example's gen.go, so the
+// test regenerates exactly what go generate does.
+func generateRuns(t *testing.T, dir string) []generateRun {
 	t.Helper()
 
 	source, err := os.ReadFile(filepath.Join(dir, "gen.go"))
 	require.NoError(t, err)
 
+	var runs []generateRun
+
 	for line := range strings.SplitSeq(string(source), "\n") {
-		if !strings.HasPrefix(line, "//go:generate ") {
+		fields := strings.Fields(line)
+		if len(fields) == 0 || fields[0] != "//go:generate" {
 			continue
 		}
 
-		fields := strings.Fields(line)
+		// Skips "//go:generate go tool gen-asyncapi".
+		const commandWords = 4
 
-		return fields[len(fields)-1]
+		var run generateRun
+
+		for _, argument := range fields[commandWords:] {
+			if value, ok := strings.CutPrefix(argument, "--config="); ok {
+				run.config = value
+
+				continue
+			}
+
+			if value, ok := strings.CutPrefix(argument, "-language="); ok {
+				run.language = Language(value)
+
+				continue
+			}
+
+			if value, ok := strings.CutPrefix(argument, "-o="); ok {
+				run.output = value
+
+				continue
+			}
+
+			run.spec = argument
+		}
+
+		runs = append(runs, run)
 	}
 
-	t.Fatalf("no go:generate line in %s", dir)
+	require.NotEmpty(t, runs, "no go:generate line in %s", dir)
 
-	return ""
+	return runs
 }
 
 func writeConfig(t *testing.T, config string) string {
@@ -194,6 +240,23 @@ func TestConfig(t *testing.T) {
 			name:        "unknown key",
 			config:      "package: chat\nbogus: 1\n",
 			wantLoadErr: commerr.ErrParseFailed,
+		},
+		{
+			name:         "typescript needs no package",
+			config:       "language: typescript\n",
+			wantOutput:   defaultTypeScriptOutput,
+			wantGenerate: GenerateOptions{Models: true, Client: true},
+		},
+		{
+			name:         "explicit go",
+			config:       "language: go\npackage: chat\n",
+			wantOutput:   defaultOutput,
+			wantGenerate: GenerateOptions{Models: true, Client: true},
+		},
+		{
+			name:    "unknown language",
+			config:  "language: rust\npackage: chat\n",
+			wantErr: commerr.ErrInvalidValue,
 		},
 	}
 

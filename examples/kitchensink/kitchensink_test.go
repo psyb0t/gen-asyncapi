@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/psyb0t/ctxerrors/commerr"
-	"github.com/psyb0t/gogen-asyncapi/asyncapirt"
-	"github.com/psyb0t/gogen-asyncapi/examples/kitchensink"
+	"github.com/psyb0t/gen-asyncapi/asyncapirt"
+	"github.com/psyb0t/gen-asyncapi/examples/kitchensink"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

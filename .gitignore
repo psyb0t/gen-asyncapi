@@ -24,6 +24,7 @@ profile.out
 .cover/
 htmlcov/
 __pycache__
+node_modules/
 *.out
 CLAUDE.md
 .research_files

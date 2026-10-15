@@ -1,4 +1,4 @@
-DEV_IMAGE := gogen-asyncapi-dev
+DEV_IMAGE := gen-asyncapi-dev
 UID := $(shell id -u)
 GID := $(shell id -g)
 MIN_TEST_COVERAGE := 90
@@ -21,7 +21,8 @@ DEV_RUN := docker run --rm --init \
 	$(DEV_IMAGE)
 
 .PHONY: all dev-image dep format generate lint lint-fix shell test test-unit \
-	test-coverage sec help
+	test-coverage test-ts sec pkg-lock pkg-add pkg-update pkg-upgrade \
+	pkg-remove help
 
 all: dep lint test ## Run dep, lint and test
 
@@ -46,6 +47,10 @@ lint-fix: dev-image ## Lint all Golang files and fix
 
 test: dev-image ## Run all tests
 	@$(DEV_RUN) go test -race -count=1 -timeout=10m ./...
+	@$(DEV_RUN) bash scripts/test-ts.sh
+
+test-ts: dev-image ## Type-check and test the generated TypeScript
+	@$(DEV_RUN) bash scripts/test-ts.sh
 
 test-unit: test ## Run the unit test suite
 
@@ -54,8 +59,31 @@ shell: dev-image ## Open a shell in the development image
 
 test-coverage: dev-image ## Run tests with coverage check. Fails if coverage is below the threshold.
 	@$(DEV_RUN) bash scripts/test-coverage.sh
+	@$(DEV_RUN) bash scripts/test-ts.sh
 
-sec: dev-image ## Security scan (govulncheck + semgrep) merged into sec.sarif; gates on findings
+# The TypeScript check tools are pnpm dev dependencies, installed into the dev
+# image from pnpm-lock.yaml. These targets only rewrite package.json and the
+# lockfile; run make dev-image afterwards. pnpm-workspace.yaml holds the
+# seven-day release-age gate, and no install runs package scripts.
+pkg-lock: dev-image ## Refresh pnpm-lock.yaml under the existing pins and age gate
+	@$(DEV_RUN) pnpm install --lockfile-only --ignore-scripts
+
+pkg-add: dev-image ## Add an exact TypeScript dev dependency: make pkg-add PKG=name@version
+	@test -n "$(PKG)" || { echo "PKG is required" >&2; exit 1; }
+	@$(DEV_RUN) pnpm add --save-dev --save-exact --lockfile-only --ignore-scripts $(PKG)
+
+pkg-update: dev-image ## Update one TypeScript dev dependency: make pkg-update PKG=name
+	@test -n "$(PKG)" || { echo "PKG is required" >&2; exit 1; }
+	@$(DEV_RUN) pnpm update --latest --lockfile-only --ignore-scripts $(PKG)
+
+pkg-upgrade: dev-image ## Upgrade every TypeScript dev dependency to its newest gated release
+	@$(DEV_RUN) pnpm update --latest --lockfile-only --ignore-scripts
+
+pkg-remove: dev-image ## Remove a TypeScript dev dependency: make pkg-remove PKG=name
+	@test -n "$(PKG)" || { echo "PKG is required" >&2; exit 1; }
+	@$(DEV_RUN) pnpm remove --lockfile-only --ignore-scripts $(PKG)
+
+sec: dev-image ## Security scan (gitleaks, govulncheck, pnpm audit, semgrep) merged into sec.sarif; gates on findings
 	@$(DEV_RUN) bash scripts/sec.sh
 
 help: ## Display this help message

@@ -1,4 +1,4 @@
-// Package asyncapirt is the support code that gogen-asyncapi generated
+// Package asyncapirt is the support code that gen-asyncapi generated
 // packages call: validation helpers, strict object decoding, incoming message
 // matching, and the transport interface the generated client sends and
 // receives through.

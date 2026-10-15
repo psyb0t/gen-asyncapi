@@ -9,15 +9,31 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const defaultOutput = "asyncapi.gen.go"
+// Language is the language of the generated file.
+type Language string
+
+// Languages the generator writes.
+const (
+	LanguageGo         Language = "go"
+	LanguageTypeScript Language = "typescript"
+)
+
+const (
+	defaultOutput           = "asyncapi.gen.go"
+	defaultTypeScriptOutput = "asyncapi.gen.ts"
+)
 
 // Config is the generator configuration file. The spec path comes from the
 // command line, and paths are relative to the directory the generator runs
 // in.
 type Config struct {
-	// Package is the Go package name of the generated file.
+	// Language is go or typescript. Empty means go.
+	Language Language `yaml:"language"`
+	// Package is the Go package name of the generated file. TypeScript output
+	// has no package and ignores it.
 	Package string `yaml:"package"`
-	// Output is the generated file. Empty means asyncapi.gen.go.
+	// Output is the generated file. Empty means asyncapi.gen.go, or
+	// asyncapi.gen.ts for TypeScript.
 	Output string `yaml:"output"`
 	// Generate picks what to generate. Omitted, everything is generated.
 	Generate *GenerateOptions `yaml:"generate"`
@@ -70,12 +86,8 @@ func LoadConfig(path string) (*Config, error) {
 // Validate fills defaults and checks required settings. Call it after any
 // command-line overrides are applied.
 func (c *Config) Validate() error {
-	if c.Package == "" {
-		return ctxerrors.Wrap(commerr.ErrRequiredConfigValueNotSet, "package")
-	}
-
-	if c.Output == "" {
-		c.Output = defaultOutput
+	if err := c.validateLanguage(); err != nil {
+		return err
 	}
 
 	if c.Generate == nil {
@@ -93,6 +105,40 @@ func (c *Config) Validate() error {
 		return ctxerrors.Wrap(
 			commerr.ErrInvalidValue,
 			"generate: client needs models",
+		)
+	}
+
+	return nil
+}
+
+// validateLanguage checks the language and the settings it needs, and fills
+// in its default output.
+func (c *Config) validateLanguage() error {
+	switch c.Language {
+	case "", LanguageGo:
+		c.Language = LanguageGo
+
+		if c.Package == "" {
+			return ctxerrors.Wrap(
+				commerr.ErrRequiredConfigValueNotSet,
+				"package",
+			)
+		}
+
+		if c.Output == "" {
+			c.Output = defaultOutput
+		}
+	case LanguageTypeScript:
+		if c.Output == "" {
+			c.Output = defaultTypeScriptOutput
+		}
+	default:
+		return ctxerrors.Wrapf(
+			commerr.ErrInvalidValue,
+			"language %q, want %s or %s",
+			c.Language,
+			LanguageGo,
+			LanguageTypeScript,
 		)
 	}
 

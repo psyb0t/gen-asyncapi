@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "typeRoots": ["/opt/ts-tools/node_modules/@types"],
+    "declaration": false,
+    "isolatedDeclarations": false,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["examples/**/*.ts"]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "gen-asyncapi-checks",
+  "private": true,
+  "type": "module",
+  "description": "Type-checks and tests the TypeScript the generator writes.",
+  "devDependencies": {
+    "@types/node": "24.19.1",
+    "typescript": "7.0.2"
+  }
+}

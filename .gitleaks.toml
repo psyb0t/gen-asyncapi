@@ -1,4 +1,4 @@
-title = "gogen-asyncapi secret scanning"
+title = "gen-asyncapi secret scanning"
 
 [extend]
 useDefault = true
@@ -17,6 +17,7 @@ paths = [
   '''(^|/)\.research_files(?:/|$)''',
   '''(^|/)\.testing(?:/|$)''',
   '''(^|/)__pycache__(?:/|$)''',
+  '''(^|/)node_modules(?:/|$)''',
   '''(^|/)sec\.sarif$''',
   '''(^|/)coverage-percent\.txt$''',
   '''(^|/)git-update\.sh(?:\.debot)?$''',

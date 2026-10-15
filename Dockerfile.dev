@@ -1,9 +1,10 @@
-# Development image for all Makefile-driven Go checks.
+# Development image for all Makefile-driven checks.
 #
-# Pins the Go 1.26.9 toolchain and carries the linter and security scanners, so
-# `make lint`, `make test`, `make test-coverage` and `make sec` run identically
-# in a local shell and in CI (the pipeline runs every make target inside this
-# image, so there is no host toolchain to drift).
+# Pins the Go 1.26.9 toolchain, Node.js and pnpm for checking the generated
+# TypeScript, and the linter and security scanners, so `make lint`, `make test`,
+# `make test-coverage` and `make sec` run identically in a local shell and in CI
+# (the pipeline runs every make target inside this image, so there is no host
+# toolchain to drift).
 FROM golang:1.26.9-alpine@sha256:3082400e369fa24d5fc60bca20edab3f6d604e0c5a690ec66b295eff4dd87ade
 
 RUN apk add --no-cache \
@@ -13,6 +14,8 @@ RUN apk add --no-cache \
 		git=2.54.0-r0 \
 		jq=1.8.2-r0 \
 		make=4.4.1-r4 \
+		nodejs=24.18.1-r0 \
+		pnpm=11.20.0-r0 \
 		python3=3.14.8-r0 \
 		py3-pip=26.1.2-r0 \
 		shellcheck=0.11.0-r1 \
@@ -50,6 +53,16 @@ RUN pip install \
 		--no-cache-dir \
 		--require-hashes \
 		-r /tmp/requirements-semgrep.txt
+
+# The TypeScript check tools install from the committed lockfile with package
+# scripts disabled, outside the bind-mounted workspace.
+WORKDIR /opt/ts-tools
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+ENV PATH="/opt/ts-tools/node_modules/.bin:${PATH}"
 
 WORKDIR /work
 

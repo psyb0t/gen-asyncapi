@@ -1,4 +1,4 @@
-module github.com/psyb0t/gogen-asyncapi
+module github.com/psyb0t/gen-asyncapi
 
 go 1.26.9
 
@@ -7,6 +7,7 @@ require (
 	github.com/psyb0t/common-go v0.7.1
 	github.com/psyb0t/ctxerrors v0.7.1
 	github.com/psyb0t/ctxscope v1.0.3
+	github.com/psyb0t/go-asyncapi v0.1.0
 	github.com/psyb0t/slogging v1.7.1
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/tools v0.47.0
@@ -221,5 +222,5 @@ require (
 
 tool (
 	github.com/golangci/golangci-lint/v2/cmd/golangci-lint
-	github.com/psyb0t/gogen-asyncapi/cmd/gogen-asyncapi
+	github.com/psyb0t/gen-asyncapi/cmd/gen-asyncapi
 )

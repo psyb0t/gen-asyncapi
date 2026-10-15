@@ -54,6 +54,11 @@ govulncheck -format sarif ./... >"$tmp/govulncheck.sarif"
 gv_rc=0
 govulncheck ./... || gv_rc=$?
 
+log INFO "running pnpm audit"
+# Checks the locked TypeScript check tools against the npm advisory database.
+pa_rc=0
+pnpm audit || pa_rc=$?
+
 log INFO "running semgrep"
 # --error gates on a finding; --sarif writes the report; --metrics=off keeps the
 # scan from phoning home. One run does both.
@@ -79,8 +84,8 @@ jq -s '{version:"2.1.0","$schema":"https://json.schemastore.org/sarif-2.1.0.json
 	"$tmp/semgrep.sarif" >"$SARIF_OUT"
 
 if [ "$gitleaks_dir_rc" -ne 0 ] || [ "$gitleaks_git_rc" -ne 0 ] ||
-	[ "$gv_rc" -ne 0 ] || [ "$sg_rc" -ne 0 ]; then
-	log ERROR "security findings, gitleaks_dir=${gitleaks_dir_rc}, gitleaks_git=${gitleaks_git_rc}, govulncheck=${gv_rc}, semgrep=${sg_rc}, report=${SARIF_OUT}"
+	[ "$gv_rc" -ne 0 ] || [ "$pa_rc" -ne 0 ] || [ "$sg_rc" -ne 0 ]; then
+	log ERROR "security findings, gitleaks_dir=${gitleaks_dir_rc}, gitleaks_git=${gitleaks_git_rc}, govulncheck=${gv_rc}, pnpm_audit=${pa_rc}, semgrep=${sg_rc}, report=${SARIF_OUT}"
 	exit 1
 fi
 log INFO "security scan complete with no findings"

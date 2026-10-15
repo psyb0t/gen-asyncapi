@@ -5,7 +5,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/psyb0t/gogen-asyncapi/internal/spec"
+	asyncapi "github.com/psyb0t/go-asyncapi"
 )
 
 // schemaDocTemplate renders a schema's doc comment: its description, default
@@ -79,7 +79,7 @@ func jsonText(value any) string {
 // plainValue turns spec mappings into ordinary maps so they encode as JSON.
 func plainValue(value any) any {
 	switch typed := value.(type) {
-	case *spec.Object:
+	case *asyncapi.Object:
 		result := make(map[string]any, len(typed.Keys))
 		for _, key := range typed.Keys {
 			result[key] = plainValue(typed.Values[key])

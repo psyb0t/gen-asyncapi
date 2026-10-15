@@ -7,8 +7,8 @@ import (
 
 	"github.com/psyb0t/ctxerrors"
 	"github.com/psyb0t/ctxerrors/commerr"
-	"github.com/psyb0t/gogen-asyncapi/asyncapirt"
-	"github.com/psyb0t/gogen-asyncapi/examples/shapes"
+	"github.com/psyb0t/gen-asyncapi/asyncapirt"
+	"github.com/psyb0t/gen-asyncapi/examples/shapes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

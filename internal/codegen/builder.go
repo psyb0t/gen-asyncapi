@@ -8,7 +8,7 @@ import (
 
 	"github.com/psyb0t/ctxerrors"
 	"github.com/psyb0t/ctxerrors/commerr"
-	"github.com/psyb0t/gogen-asyncapi/internal/spec"
+	asyncapi "github.com/psyb0t/go-asyncapi"
 )
 
 const (
@@ -29,18 +29,18 @@ const (
 // builder turns schemas into Go declarations. Each schema location becomes at
 // most one named type, so every $ref to it shares that type.
 type builder struct {
-	resolver *spec.Resolver
+	resolver *asyncapi.Resolver
 	names    *nameSet
 	decls    []*decl
-	byPlace  map[spec.Location]*typeRef
+	byPlace  map[asyncapi.Location]*typeRef
 	usesTime bool
 }
 
-func newBuilder(resolver *spec.Resolver, reserved ...string) *builder {
+func newBuilder(resolver *asyncapi.Resolver, reserved ...string) *builder {
 	return &builder{
 		resolver: resolver,
 		names:    newNameSet(reserved...),
-		byPlace:  map[spec.Location]*typeRef{},
+		byPlace:  map[asyncapi.Location]*typeRef{},
 	}
 }
 
@@ -48,7 +48,7 @@ func newBuilder(resolver *spec.Resolver, reserved ...string) *builder {
 // names the type when the schema is inline and needs its own declaration.
 func (b *builder) typeOf(
 	value any,
-	at spec.Location,
+	at asyncapi.Location,
 	hint string,
 ) (*typeRef, error) {
 	resolved, location, err := b.resolver.Deref(value, at)
@@ -60,7 +60,7 @@ func (b *builder) typeOf(
 		return cached, nil
 	}
 
-	object, isObject := resolved.(*spec.Object)
+	object, isObject := resolved.(*asyncapi.Object)
 	if !isObject {
 		if allowed, isBool := resolved.(bool); isBool && !allowed {
 			return nil, ctxerrors.Wrapf(
@@ -87,7 +87,7 @@ func (b *builder) typeOf(
 
 func (b *builder) build(
 	info *schemaInfo,
-	location spec.Location,
+	location asyncapi.Location,
 	hint string,
 ) (*typeRef, error) {
 	switch {
@@ -137,7 +137,7 @@ func (b *builder) build(
 // type alias, so the spec's name appears in the generated API. Inline schemas
 // are used as they are.
 func (b *builder) componentAlias(
-	location spec.Location,
+	location asyncapi.Location,
 	hint string,
 	ref *typeRef,
 ) (*typeRef, error) {
@@ -276,7 +276,7 @@ func appendNumberCheck(checks []check, kind checkKind, value any) []check {
 
 func (b *builder) array(
 	info *schemaInfo,
-	location spec.Location,
+	location asyncapi.Location,
 	hint string,
 ) (*typeRef, error) {
 	elem, err := b.typeOf(info.items, location.Child("items"), hint+"Item")
@@ -300,7 +300,7 @@ func (b *builder) array(
 // patternProperties and propertyNames patterns are checked on the keys.
 func (b *builder) mapType(
 	info *schemaInfo,
-	location spec.Location,
+	location asyncapi.Location,
 	hint string,
 ) (*typeRef, error) {
 	valueSchema, valueAt := b.mapValueSchema(info, location)
@@ -340,9 +340,9 @@ func (b *builder) mapType(
 
 func (b *builder) mapValueSchema(
 	info *schemaInfo,
-	location spec.Location,
-) (any, spec.Location) {
-	additional, isSchema := info.additionalProperties.(*spec.Object)
+	location asyncapi.Location,
+) (any, asyncapi.Location) {
+	additional, isSchema := info.additionalProperties.(*asyncapi.Object)
 	if isSchema {
 		return additional, location.Child("additionalProperties")
 	}
@@ -399,7 +399,7 @@ func isEnumBase(base *typeRef) bool {
 
 func (b *builder) enum(
 	info *schemaInfo,
-	location spec.Location,
+	location asyncapi.Location,
 	hint string,
 ) (*typeRef, error) {
 	base := b.primitive(info)
@@ -447,7 +447,7 @@ func (b *builder) enum(
 
 func (b *builder) object(
 	info *schemaInfo,
-	location spec.Location,
+	location asyncapi.Location,
 	hint string,
 ) (*typeRef, error) {
 	structDecl := &decl{
@@ -508,7 +508,7 @@ func applyObjectConstraints(structDecl *decl, info *schemaInfo) {
 func (b *builder) addFields(
 	structDecl *decl,
 	info *schemaInfo,
-	location spec.Location,
+	location asyncapi.Location,
 ) error {
 	if info.properties == nil {
 		return nil
@@ -547,7 +547,7 @@ func (b *builder) addFields(
 func (b *builder) field(
 	parentName, jsonName string,
 	value any,
-	at spec.Location,
+	at asyncapi.Location,
 	required bool,
 ) (*field, error) {
 	resolved, resolvedAt, err := b.resolver.Deref(value, at)
@@ -557,7 +557,7 @@ func (b *builder) field(
 
 	newField := &field{jsonName: jsonName, required: required}
 
-	propertyObject, isObject := resolved.(*spec.Object)
+	propertyObject, isObject := resolved.(*asyncapi.Object)
 	if isObject {
 		info := readSchema(propertyObject)
 		newField.doc = schemaDoc(info)
@@ -576,6 +576,7 @@ func (b *builder) field(
 		}
 
 		nullable := info.nullable
+		newField.nullable = nullable
 
 		newField.ref, err = b.typeOf(value, at, parentName+GoName(jsonName))
 		if err != nil {
@@ -643,7 +644,7 @@ func (b *builder) constField(
 func (b *builder) contentField(
 	target *field,
 	info *schemaInfo,
-	at spec.Location,
+	at asyncapi.Location,
 	parentName string,
 ) error {
 	hasJSONMediaType := info.contentMediaType == "" ||
@@ -672,7 +673,7 @@ func (b *builder) contentField(
 
 func (b *builder) allOfStruct(
 	info *schemaInfo,
-	location spec.Location,
+	location asyncapi.Location,
 	hint string,
 ) (*typeRef, error) {
 	structDecl := &decl{
@@ -690,7 +691,7 @@ func (b *builder) allOfStruct(
 	b.decls = append(b.decls, structDecl)
 
 	merged := &schemaInfo{
-		properties:        &spec.Object{Values: map[string]any{}},
+		properties:        &asyncapi.Object{Values: map[string]any{}},
 		required:          map[string]bool{},
 		dependentRequired: map[string][]string{},
 	}
@@ -724,20 +725,20 @@ func (b *builder) allOfStruct(
 // it resolve against the right document.
 type mergedProperty struct {
 	value any
-	at    spec.Location
+	at    asyncapi.Location
 }
 
 func (b *builder) mergeMember(
 	merged *schemaInfo,
 	member any,
-	at spec.Location,
+	at asyncapi.Location,
 ) error {
 	resolved, resolvedAt, err := b.resolver.Deref(member, at)
 	if err != nil {
 		return ctxerrors.Wrap(err, "dereference allOf member")
 	}
 
-	object, ok := resolved.(*spec.Object)
+	object, ok := resolved.(*asyncapi.Object)
 	if !ok {
 		return nil
 	}
@@ -794,7 +795,7 @@ func mergeConstraints(merged, info *schemaInfo) {
 // the order in which they first appear.
 func mergeProperties(
 	merged, info *schemaInfo,
-	resolvedAt spec.Location,
+	resolvedAt asyncapi.Location,
 ) {
 	if info.properties == nil {
 		return
@@ -848,8 +849,8 @@ func (b *builder) addMergedFields(structDecl *decl, merged *schemaInfo) error {
 func (b *builder) union(
 	info *schemaInfo,
 	members []any,
-	membersAt spec.Location,
-	location spec.Location,
+	membersAt asyncapi.Location,
+	location asyncapi.Location,
 	hint string,
 ) (*typeRef, error) {
 	unionDecl := &decl{
@@ -862,7 +863,7 @@ func (b *builder) union(
 	b.decls = append(b.decls, unionDecl)
 
 	suffixes := newNameSet()
-	locations := make([]spec.Location, 0, len(members))
+	locations := make([]asyncapi.Location, 0, len(members))
 
 	for i, member := range members {
 		memberAt := membersAt.Child(strconv.Itoa(i))
@@ -922,7 +923,7 @@ func variantSuffix(ref *typeRef) string {
 func (b *builder) assignDiscriminator(
 	unionDecl *decl,
 	info *schemaInfo,
-	locations []spec.Location,
+	locations []asyncapi.Location,
 ) error {
 	property := info.discriminatorProperty
 	if property == "" {
@@ -960,7 +961,7 @@ func (b *builder) assignDiscriminator(
 
 func (b *builder) discriminatorMapping(
 	info *schemaInfo,
-	locations []spec.Location,
+	locations []asyncapi.Location,
 ) (map[int][]string, error) {
 	mapped := map[int][]string{}
 	if info.discriminatorMapping == nil {
@@ -974,7 +975,7 @@ func (b *builder) discriminatorMapping(
 			target = "#" + componentSchemasPrefix + target
 		}
 
-		_, targetAt, err := b.resolver.Deref(&spec.Object{
+		_, targetAt, err := b.resolver.Deref(&asyncapi.Object{
 			Keys:   []string{"$ref"},
 			Values: map[string]any{"$ref": target},
 		}, locations[0])
@@ -1061,7 +1062,7 @@ func constOf(unionVariant *variant, property string) string {
 	return ""
 }
 
-func componentOrName(location spec.Location, fallback string) string {
+func componentOrName(location asyncapi.Location, fallback string) string {
 	if name, ok := componentSchemaName(location); ok {
 		return name
 	}
@@ -1069,13 +1070,13 @@ func componentOrName(location spec.Location, fallback string) string {
 	return fallback
 }
 
-func isComponentSchema(location spec.Location) bool {
+func isComponentSchema(location asyncapi.Location) bool {
 	_, ok := componentSchemaName(location)
 
 	return ok
 }
 
-func componentSchemaName(location spec.Location) (string, bool) {
+func componentSchemaName(location asyncapi.Location) (string, bool) {
 	name, ok := strings.CutPrefix(location.Pointer, componentSchemasPrefix)
 	if !ok || strings.Contains(name, "/") {
 		return "", false
