@@ -1,0 +1,46 @@
+asyncapi: 3.0.1
+info:
+  title: Root
+  version: 2.0.0
+servers:
+  main:
+    host: example.com
+    pathname: /socket
+    protocol: wss
+channels:
+  zeta:
+    address: zeta
+    messages:
+      shared:
+        $ref: 'shared.yaml#/components/messages/Shared'
+      inline:
+        payload:
+          type: object
+          properties:
+            b: {type: string}
+            a: {type: string}
+  alpha:
+    address: 'alpha/{id}'
+    parameters:
+      id:
+        enum: [one, two]
+        default: one
+    messages:
+      shared:
+        $ref: 'shared.yaml#/components/messages/Shared'
+operations:
+  listen:
+    action: receive
+    channel:
+      $ref: '#/channels/zeta'
+  talk:
+    action: send
+    channel:
+      $ref: '#/channels/alpha'
+    messages:
+      - $ref: '#/channels/alpha/messages/shared'
+    reply:
+      channel:
+        $ref: '#/channels/zeta'
+      messages:
+        - $ref: '#/channels/zeta/messages/inline'

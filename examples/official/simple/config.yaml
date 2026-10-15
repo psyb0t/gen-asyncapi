@@ -1,0 +1,2 @@
+package: simple
+output: simple.gen.go

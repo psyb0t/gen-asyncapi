@@ -1,0 +1,11 @@
+components:
+  messages:
+    Shared:
+      name: shared
+      payload:
+        $ref: '#/components/schemas/Payload'
+  schemas:
+    Payload:
+      type: object
+      properties:
+        n: {type: integer}

@@ -1,0 +1,2 @@
+package: rpc_client
+output: rpc_client.gen.go

@@ -1,0 +1,14 @@
+# Components referenced from kitchensink.yaml by relative path.
+components:
+  messages:
+    ExternalPing:
+      name: externalPing
+      payload:
+        $ref: '#/components/schemas/Ping'
+  schemas:
+    Ping:
+      type: object
+      required: [ping]
+      properties:
+        ping:
+          const: external

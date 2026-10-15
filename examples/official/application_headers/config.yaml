@@ -1,0 +1,2 @@
+package: application_headers
+output: application_headers.gen.go

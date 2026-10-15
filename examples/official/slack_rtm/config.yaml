@@ -1,0 +1,2 @@
+package: slack_rtm
+output: slack_rtm.gen.go

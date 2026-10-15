@@ -1,0 +1,7 @@
+asyncapi: 3.0.0
+info: {title: Cycle, version: 1.0.0}
+channels:
+  a:
+    $ref: '#/channels/b'
+  b:
+    $ref: '#/channels/a'

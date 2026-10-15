@@ -1,0 +1,189 @@
+asyncapi: 3.0.0
+info:
+  title: Schema Shapes
+  version: 0.1.0
+
+channels:
+  feed:
+    address: feed/{type}/{userId}
+    parameters:
+      type:
+        description: Feed type; a Go keyword as a parameter name.
+      userId: {}
+    messages:
+      tree:
+        $ref: '#/components/messages/Tree'
+      reading:
+        $ref: '#/components/messages/Reading'
+      frame:
+        $ref: '#/components/messages/Frame'
+
+operations:
+  publishTree:
+    action: send
+    channel:
+      $ref: '#/channels/feed'
+    messages:
+      - $ref: '#/channels/feed/messages/tree'
+  receiveFeed:
+    action: receive
+    channel:
+      $ref: '#/channels/feed'
+
+components:
+  messages:
+    Frame:
+      summary: Socket frames tagged by a const type, with no discriminator keyword.
+      payload:
+        oneOf:
+          - $ref: '#/components/schemas/StartedFrame'
+          - $ref: '#/components/schemas/StoppedFrame'
+    Tree:
+      payload:
+        $ref: '#/components/schemas/Node'
+    Reading:
+      summary: An OpenAPI 3.0 schema, which brings nullable, boolean exclusive bounds and discriminator mappings.
+      payload:
+        schemaFormat: application/vnd.oai.openapi;version=3.0.0
+        schema:
+          type: object
+          title: Sensor Reading
+          required: [value, unit, tags, level, ratio, labels]
+          properties:
+            value:
+              $ref: '#/components/schemas/Measurement'
+            unit:
+              type: string
+              nullable: true
+            tags:
+              $ref: '#/components/schemas/Tags'
+            level:
+              $ref: '#/components/schemas/Level'
+            ratio:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+              exclusiveMaximum: true
+            labels:
+              type: object
+              additionalProperties:
+                type: integer
+                format: int32
+                minimum: 0
+                exclusiveMinimum: true
+            range:
+              type: string
+              nullable: true
+            extra: {}
+            func:
+              type: boolean
+            batch:
+              $ref: '#/components/schemas/Batch'
+            source:
+              oneOf:
+                - $ref: '#/components/schemas/SensorA'
+                - $ref: '#/components/schemas/SensorB'
+                - $ref: '#/components/schemas/SensorC'
+              discriminator:
+                propertyName: kind
+                mapping:
+                  alpha: '#/components/schemas/SensorA'
+                  beta: SensorB
+
+  schemas:
+    Node:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Node'
+
+    Measurement:
+      anyOf:
+        - type: number
+        - type: string
+          pattern: '^[0-9]+(\.[0-9]+)?[a-z]+$'
+        - $ref: '#/components/schemas/Point'
+
+    Point:
+      type: object
+      additionalProperties: false
+      required: [x, y]
+      properties:
+        x: {type: integer}
+        y: {type: integer}
+
+    Tags:
+      type: array
+      minItems: 1
+      items:
+        type: string
+        maxLength: 8
+
+    Level:
+      type: integer
+      enum: [-1, 0, 1, 2]
+
+    StartedFrame:
+      type: object
+      required: [type, sequence]
+      properties:
+        type:
+          type: string
+          const: run.started
+        sequence:
+          type: integer
+
+    StoppedFrame:
+      type: object
+      required: [type, sequence]
+      properties:
+        type:
+          type: string
+          const: run.stopped
+        sequence:
+          type: integer
+        reason:
+          type: string
+
+    SensorA:
+      type: object
+      required: [kind, alpha]
+      properties:
+        kind:
+          type: string
+        alpha:
+          type: integer
+
+    SensorB:
+      type: object
+      required: [kind, beta]
+      properties:
+        kind:
+          type: string
+        beta:
+          type: string
+
+    SensorC:
+      description: Not in the mapping and no const, so its schema name selects it.
+      type: object
+      required: [kind, gamma]
+      properties:
+        kind:
+          type: string
+        gamma:
+          type: boolean
+
+    Batch:
+      oneOf:
+        - type: array
+          items:
+            type: string
+        - type: object
+          additionalProperties:
+            type: integer

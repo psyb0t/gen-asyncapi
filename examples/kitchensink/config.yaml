@@ -1,0 +1,2 @@
+package: kitchensink
+output: kitchensink.gen.go

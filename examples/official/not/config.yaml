@@ -1,0 +1,2 @@
+package: not
+output: not.gen.go

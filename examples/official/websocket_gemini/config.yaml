@@ -1,0 +1,2 @@
+package: websocket_gemini
+output: websocket_gemini.gen.go

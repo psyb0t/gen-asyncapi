@@ -1,0 +1,3 @@
+# The official AsyncAPI examples are kept byte-for-byte as upstream ships
+# them, trailing whitespace included.
+examples/official/*/spec.yml -whitespace

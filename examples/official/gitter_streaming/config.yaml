@@ -1,0 +1,2 @@
+package: gitter_streaming
+output: gitter_streaming.gen.go

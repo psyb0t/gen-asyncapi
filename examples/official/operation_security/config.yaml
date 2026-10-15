@@ -1,0 +1,2 @@
+package: operation_security
+output: operation_security.gen.go

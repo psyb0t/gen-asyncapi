@@ -1,0 +1,2 @@
+package: streetlights_operation_security
+output: streetlights_operation_security.gen.go

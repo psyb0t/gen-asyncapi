@@ -1,0 +1,554 @@
+# Uses every AsyncAPI 3.0 object and every JSON Schema keyword the generator
+# reads, plus the ones it documents as not enforced.
+asyncapi: 3.0.0
+id: urn:example:kitchensink
+info:
+  title: Kitchen Sink
+  version: 3.1.4
+  description: Every AsyncAPI 3.0 feature in one document.
+  termsOfService: https://example.com/terms
+  contact:
+    name: API Support
+    url: https://example.com/support
+    email: support@example.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  tags:
+    - name: sink
+      description: Everything.
+      externalDocs:
+        url: https://example.com/docs/sink
+  externalDocs:
+    description: Long-form docs.
+    url: https://example.com/docs
+
+defaultContentType: application/json
+
+servers:
+  production:
+    host: '{region}.example.com:{port}'
+    pathname: /v{version}/ws
+    protocol: wss
+    protocolVersion: '13'
+    title: Production
+    summary: Regional production cluster.
+    description: Picks a region and port.
+    variables:
+      region:
+        $ref: '#/components/serverVariables/region'
+      port:
+        enum: ['443', '8443']
+        default: '443'
+      version:
+        default: '2'
+        examples: ['1', '2']
+    security:
+      - $ref: '#/components/securitySchemes/apiKey'
+      - $ref: '#/components/securitySchemes/bearer'
+    tags:
+      - $ref: '#/components/tags/sink'
+    externalDocs:
+      $ref: '#/components/externalDocs/serverDocs'
+    bindings:
+      ws:
+        bindingVersion: 0.1.0
+  broker:
+    $ref: '#/components/servers/broker'
+
+channels:
+  events:
+    $ref: '#/components/channels/events'
+  commands:
+    address: tenants/{tenantId}/commands
+    title: Commands
+    summary: Commands sent to a tenant.
+    servers:
+      - $ref: '#/servers/production'
+    parameters:
+      tenantId:
+        $ref: '#/components/parameters/tenantId'
+    messages:
+      command:
+        $ref: '#/components/messages/Command'
+      commandResult:
+        $ref: '#/components/messages/CommandResult'
+    bindings:
+      $ref: '#/components/channelBindings/wsChannel'
+  replies:
+    address: null
+    description: Dynamic reply channel; the address comes from the request.
+    messages:
+      commandResult:
+        $ref: '#/components/messages/CommandResult'
+  telemetry:
+    address: telemetry
+    messages:
+      avroReading:
+        $ref: '#/components/messages/AvroReading'
+      external:
+        $ref: 'external.yaml#/components/messages/ExternalPing'
+      inlinePayload:
+        payload:
+          type: object
+          required: [n]
+          properties:
+            n:
+              type: integer
+              format: int32
+
+operations:
+  sendCommand:
+    $ref: '#/components/operations/sendCommand'
+  onEvent:
+    action: receive
+    channel:
+      $ref: '#/channels/events'
+    title: On event
+    traits:
+      - $ref: '#/components/operationTraits/logged'
+  onTelemetry:
+    action: receive
+    channel:
+      $ref: '#/channels/telemetry'
+    messages:
+      - $ref: '#/channels/telemetry/messages/avroReading'
+      - $ref: '#/channels/telemetry/messages/external'
+      - $ref: '#/channels/telemetry/messages/inlinePayload'
+
+components:
+  schemas:
+    Envelope:
+      type: object
+      description: Every event carries this envelope.
+      required: [kind, id, occurredAt]
+      properties:
+        kind:
+          type: string
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        occurredAt:
+          type: string
+          format: date-time
+        traceId:
+          type: [string, 'null']
+          description: Null when tracing is off.
+
+    Event:
+      oneOf:
+        - $ref: '#/components/schemas/Created'
+        - $ref: '#/components/schemas/Deleted'
+        - $ref: '#/components/schemas/Renamed'
+      discriminator: kind
+
+    Created:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          required: [item]
+          properties:
+            kind:
+              const: created
+            item:
+              $ref: '#/components/schemas/Item'
+
+    Deleted:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            kind:
+              const: deleted
+            hard:
+              type: boolean
+              default: false
+
+    Renamed:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          required: [from, to]
+          properties:
+            kind:
+              const: renamed
+            from:
+              type: string
+            to:
+              type: string
+          dependentRequired:
+            to: [from]
+
+    Item:
+      type: object
+      additionalProperties: false
+      required: [sku, price, quantity, tags, dimensions]
+      minProperties: 5
+      maxProperties: 12
+      properties:
+        sku:
+          type: string
+          pattern: '^[A-Z]{3}-[0-9]{4}$'
+          examples: [ABC-1234]
+        price:
+          type: number
+          format: double
+          exclusiveMinimum: 0
+          multipleOf: 0.01
+        quantity:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 1000
+        weight:
+          type: number
+          format: float
+        tags:
+          type: array
+          uniqueItems: true
+          minItems: 1
+          maxItems: 10
+          items:
+            type: string
+            minLength: 2
+        dimensions:
+          $ref: '#/components/schemas/Dimensions'
+        attributes:
+          type: object
+          patternProperties:
+            '^x-[a-z]+$':
+              type: string
+        counters:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+          propertyNames:
+            pattern: '^[a-z]+$'
+          maxProperties: 3
+        legacyCode:
+          type: string
+          deprecated: true
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+        status:
+          $ref: '#/components/schemas/Status'
+        priority:
+          type: integer
+          enum: [1, 2, 3]
+        ratio:
+          type: number
+          enum: [0.5, 1.5]
+        coordinates:
+          type: array
+          items:
+            - type: number
+            - type: number
+        anything: {}
+        notNull:
+          not:
+            type: 'null'
+        shipping:
+          type: object
+          properties:
+            express:
+              type: boolean
+          if:
+            properties:
+              express:
+                const: true
+          then:
+            required: [express]
+        email:
+          type: string
+          format: email
+        homepage:
+          type: string
+          format: uri
+        birthday:
+          type: string
+          format: date
+        blob:
+          type: string
+          format: byte
+        mixed:
+          type: [string, integer]
+
+    Dimensions:
+      type: object
+      required: [width, height]
+      default:
+        width: 1
+        height: 1
+      examples:
+        - width: 10
+          height: 20
+          tags: [a, b]
+      properties:
+        width:
+          type: integer
+          format: int32
+          minimum: 0
+          exclusiveMaximum: 10000
+        height:
+          type: integer
+          format: int32
+          minimum: 0
+        depth:
+          type: integer
+          format: int32
+          nullable: true
+
+    Status:
+      type: string
+      enum: [active, archived, on-hold]
+      default: active
+
+    Command:
+      type: object
+      required: [commandId, action]
+      properties:
+        commandId:
+          type: string
+        action:
+          type: string
+          enum: [start, stop]
+        payload:
+          $ref: '#/components/schemas/CommandPayload'
+
+    CommandPayload:
+      anyOf:
+        - type: string
+          maxLength: 64
+        - type: integer
+        - $ref: '#/components/schemas/Dimensions'
+
+    CommandResult:
+      type: object
+      required: [commandId, ok]
+      properties:
+        commandId:
+          type: string
+        ok:
+          type: boolean
+        error:
+          type: string
+
+    TraceHeaders:
+      type: object
+      properties:
+        x-trace-id:
+          type: string
+        x-attempt:
+          type: integer
+          minimum: 1
+
+    Tree:
+      type: object
+      required: [value]
+      properties:
+        value:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tree'
+      $defs:
+        Leaf:
+          type: string
+
+  servers:
+    broker:
+      host: broker.example.com
+      protocol: mqtt
+      description: Internal broker.
+      bindings:
+        $ref: '#/components/serverBindings/mqttServer'
+
+  channels:
+    events:
+      address: events
+      description: Item lifecycle events.
+      messages:
+        event:
+          $ref: '#/components/messages/Event'
+        heartbeat:
+          $ref: '#/components/messages/Heartbeat'
+      tags:
+        - name: events
+      externalDocs:
+        url: https://example.com/events
+
+  operations:
+    sendCommand:
+      action: send
+      channel:
+        $ref: '#/channels/commands'
+      summary: Send a command.
+      security:
+        - $ref: '#/components/securitySchemes/bearer'
+      messages:
+        - $ref: '#/channels/commands/messages/command'
+      reply:
+        $ref: '#/components/replies/commandReply'
+      bindings:
+        $ref: '#/components/operationBindings/wsOperation'
+
+  messages:
+    Event:
+      name: event
+      title: Item event
+      summary: Something happened to an item.
+      payload:
+        $ref: '#/components/schemas/Event'
+      traits:
+        - $ref: '#/components/messageTraits/traced'
+      examples:
+        - name: created
+          payload:
+            kind: created
+    Heartbeat:
+      name: heartbeat
+      payload:
+        type: object
+        required: [beat]
+        properties:
+          beat:
+            const: true
+      deprecated: true
+    Command:
+      name: command
+      contentType: application/json
+      correlationId:
+        $ref: '#/components/correlationIds/commandId'
+      payload:
+        $ref: '#/components/schemas/Command'
+      bindings:
+        ws:
+          bindingVersion: 0.1.0
+      traits:
+        - $ref: '#/components/messageTraits/bound'
+    CommandResult:
+      name: commandResult
+      correlationId:
+        description: Echo of the command id.
+        location: $message.payload#/commandId
+      payload:
+        $ref: '#/components/schemas/CommandResult'
+    AvroReading:
+      name: avroReading
+      contentType: application/avro
+      payload:
+        schemaFormat: application/vnd.apache.avro+json;version=1.9.0
+        schema:
+          type: record
+          name: Reading
+          fields:
+            - name: value
+              type: double
+    TreeMessage:
+      payload:
+        schemaFormat: application/vnd.aai.asyncapi+json;version=3.0.0
+        schema:
+          $ref: '#/components/schemas/Tree'
+
+  securitySchemes:
+    apiKey:
+      type: httpApiKey
+      name: X-API-Key
+      in: header
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    oauth:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://example.com/token
+          availableScopes:
+            events:read: Read events.
+
+  serverVariables:
+    region:
+      enum: [eu, us]
+      default: eu
+      description: Deployment region.
+
+  parameters:
+    tenantId:
+      description: Tenant slug.
+      default: acme
+      examples: [acme, globex]
+      location: $message.payload#/tenantId
+
+  correlationIds:
+    commandId:
+      description: The command id, echoed by the result.
+      location: $message.payload#/commandId
+
+  replies:
+    commandReply:
+      address:
+        $ref: '#/components/replyAddresses/fromHeader'
+      channel:
+        $ref: '#/channels/replies'
+      messages:
+        - $ref: '#/channels/replies/messages/commandResult'
+
+  replyAddresses:
+    fromHeader:
+      description: The reply topic named in the request header.
+      location: $message.header#/replyTo
+
+  tags:
+    sink:
+      name: sink
+
+  externalDocs:
+    serverDocs:
+      url: https://example.com/servers
+
+  operationTraits:
+    logged:
+      summary: Logged operation.
+      description: Every call is logged.
+      tags:
+        - name: logged
+
+  messageTraits:
+    traced:
+      headers:
+        $ref: '#/components/schemas/TraceHeaders'
+      contentType: application/cloudevents+json
+      name: overridden-by-the-message
+
+    bound:
+      summary: Adds bindings the message does not set, without replacing its own.
+      bindings:
+        ws:
+          bindingVersion: 9.9.9
+          method: GET
+        kafka:
+          key:
+            type: string
+
+  serverBindings:
+    mqttServer:
+      mqtt:
+        clientId: kitchensink
+        bindingVersion: 0.2.0
+  channelBindings:
+    wsChannel:
+      ws:
+        method: GET
+        bindingVersion: 0.1.0
+  operationBindings:
+    wsOperation:
+      ws: {}
+  messageBindings:
+    wsMessage:
+      ws: {}

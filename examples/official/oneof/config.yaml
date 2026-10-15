@@ -1,0 +1,2 @@
+package: oneof
+output: oneof.gen.go

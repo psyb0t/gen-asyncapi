@@ -1,0 +1,2 @@
+package: streetlights_kafka
+output: streetlights_kafka.gen.go

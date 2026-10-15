@@ -1,0 +1,11 @@
+int: 42
+hex: 0x10
+float: 1.5
+bool: true
+null_value: null
+text: hello
+quoted_number: "7"
+tagged_float: !!float 3
+anchor: &shared {a: 1}
+alias: *shared
+list: [1, two]

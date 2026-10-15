@@ -1,0 +1,265 @@
+asyncapi: 3.0.0
+info:
+  title: Example Chat API
+  version: 1.0.0
+  description: A chat room protocol used to exercise every gogen-asyncapi feature.
+
+servers:
+  production:
+    host: chat.example.com
+    pathname: /ws
+    protocol: wss
+    description: Public chat server.
+
+channels:
+  room:
+    address: rooms/{roomId}
+    description: One chat room.
+    parameters:
+      roomId:
+        description: Room slug.
+    messages:
+      join:
+        $ref: '#/components/messages/Join'
+      say:
+        $ref: '#/components/messages/Say'
+      ack:
+        $ref: '#/components/messages/Ack'
+      event:
+        $ref: '#/components/messages/Event'
+      notice:
+        $ref: '#/components/messages/Notice'
+      alert:
+        $ref: '#/components/messages/Alert'
+
+operations:
+  joinRoom:
+    action: send
+    summary: Join a room.
+    channel:
+      $ref: '#/channels/room'
+    messages:
+      - $ref: '#/channels/room/messages/join'
+    reply:
+      messages:
+        - $ref: '#/channels/room/messages/ack'
+  say:
+    action: send
+    summary: Post a message to the room.
+    channel:
+      $ref: '#/channels/room'
+    messages:
+      - $ref: '#/channels/room/messages/say'
+  receiveEvents:
+    action: receive
+    channel:
+      $ref: '#/channels/room'
+    messages:
+      - $ref: '#/channels/room/messages/event'
+      - $ref: '#/channels/room/messages/notice'
+      - $ref: '#/channels/room/messages/alert'
+
+components:
+  messages:
+    Join:
+      name: join
+      summary: Request to join a room.
+      payload:
+        $ref: '#/components/schemas/JoinRequest'
+    Say:
+      name: say
+      payload:
+        $ref: '#/components/schemas/SayRequest'
+    Ack:
+      name: ack
+      summary: Server acknowledgement of a request.
+      payload:
+        $ref: '#/components/schemas/Ack'
+    Event:
+      name: event
+      summary: Something happened in the room.
+      payload:
+        $ref: '#/components/schemas/ServerEvent'
+    Notice:
+      name: notice
+      summary: Batched notices. Same shape as Alert; only the item type tells them apart.
+      payload:
+        $ref: '#/components/schemas/NoticeEnvelope'
+    Alert:
+      name: alert
+      payload:
+        $ref: '#/components/schemas/AlertEnvelope'
+
+  schemas:
+    JoinRequest:
+      type: object
+      additionalProperties: false
+      required: [type, id, room]
+      properties:
+        type:
+          type: string
+          const: join
+        id:
+          type: string
+          format: uuid
+        room:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: '^[a-z0-9-]+$'
+        nickname:
+          type: string
+          description: Display name; the server picks one when absent.
+
+    SayRequest:
+      type: object
+      required: [type, id, text]
+      properties:
+        type:
+          type: string
+          enum: [say]
+        id:
+          type: string
+        text:
+          type: string
+          minLength: 1
+        mentions:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+
+    Ack:
+      type: object
+      required: [type, id, ok]
+      properties:
+        type:
+          type: string
+          const: ack
+        id:
+          type: string
+        ok:
+          type: boolean
+        error:
+          type: string
+        sequence:
+          type: integer
+          minimum: 0
+
+    ServerEvent:
+      oneOf:
+        - $ref: '#/components/schemas/MessagePosted'
+        - $ref: '#/components/schemas/MemberJoined'
+        - $ref: '#/components/schemas/Ping'
+      discriminator: type
+
+    EventBase:
+      type: object
+      required: [type, at, sequence]
+      properties:
+        at:
+          type: string
+          format: date-time
+        sequence:
+          type: integer
+          minimum: 1
+
+    MessagePosted:
+      allOf:
+        - $ref: '#/components/schemas/EventBase'
+        - type: object
+          required: [text, author]
+          properties:
+            type:
+              type: string
+              const: message.posted
+            text:
+              type: string
+            author:
+              $ref: '#/components/schemas/Member'
+            attachments:
+              type: array
+              items:
+                $ref: '#/components/schemas/Attachment'
+
+    MemberJoined:
+      allOf:
+        - $ref: '#/components/schemas/EventBase'
+        - type: object
+          required: [member]
+          properties:
+            type:
+              type: string
+              const: member.joined
+            member:
+              $ref: '#/components/schemas/Member'
+
+    Ping:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          const: ping
+
+    Member:
+      type: object
+      required: [id, role]
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+          enum: [owner, member, guest]
+
+    Attachment:
+      type: object
+      required: [kind, meta]
+      properties:
+        kind:
+          type: string
+          enum: [image, file]
+        meta:
+          type: string
+          contentMediaType: application/json
+          contentSchema:
+            $ref: '#/components/schemas/AttachmentMeta'
+
+    AttachmentMeta:
+      type: object
+      required: [size]
+      properties:
+        size:
+          type: integer
+          minimum: 0
+        mime:
+          type: string
+
+    NoticeEnvelope:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/PushItem'
+
+    AlertEnvelope:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/PushItem'
+
+    PushItem:
+      type: object
+      required: [type, text]
+      properties:
+        type:
+          type: string
+        text:
+          type: string

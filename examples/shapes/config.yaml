@@ -1,0 +1,2 @@
+package: shapes
+output: shapes.gen.go

@@ -1,0 +1,13 @@
+package: chat
+output: chat.gen.go
+generate:
+  models: true
+  client: true
+output-options:
+  # Notice and Alert have the same shape; only the first item's type tells
+  # them apart, and the spec does not pin it with const.
+  message-matchers:
+    Notice:
+      /messages/0/type: notice
+    Alert:
+      /messages/0/type: alert

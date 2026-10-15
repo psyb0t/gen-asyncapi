@@ -1,0 +1,2 @@
+package: correlation_id
+output: correlation_id.gen.go

@@ -1,0 +1,2 @@
+package: kraken_websocket_request_reply_multiple_channels
+output: kraken_websocket_request_reply_multiple_channels.gen.go

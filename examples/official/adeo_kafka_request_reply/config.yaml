@@ -1,0 +1,2 @@
+package: adeo_kafka_request_reply
+output: adeo_kafka_request_reply.gen.go

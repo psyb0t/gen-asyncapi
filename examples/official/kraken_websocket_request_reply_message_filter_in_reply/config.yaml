@@ -1,0 +1,2 @@
+package: kraken_websocket_request_reply_message_filter_in_reply
+output: kraken_websocket_request_reply_message_filter_in_reply.gen.go
