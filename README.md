@@ -29,6 +29,7 @@ Spec loading comes from [go-asyncapi](https://github.com/psyb0t/go-asyncapi). Gr
 - [TypeScript](#typescript)
 - [What gets generated](#what-gets-generated)
 - [Example packages](#example-packages)
+- [Agent integrations](#agent-integrations)
 - [Development](#development)
 - [License](#license)
 
@@ -403,6 +404,34 @@ Every object and keyword, one row each, is in [docs/spec-coverage.md](docs/spec-
 - [examples/shapes](examples/shapes): schema edge cases, plus an OpenAPI 3.0 payload with `nullable` and a discriminator mapping.
 - [examples/kitchensink](examples/kitchensink): every AsyncAPI 3.0 object in one document, valid against the official JSON Schema.
 - [examples/official](examples/official): the 19 examples from the AsyncAPI spec repository, generated as they are in both languages. CI builds and type-checks them and checks they match the generator.
+
+## Agent integrations
+
+The [skill](.agents/skills/gen-asyncapi) teaches a coding agent how to set up the generator and use the code it writes, in Go and TypeScript. It works in any agent that reads `.agents/skills/`, and installs natively in the clients below.
+
+### Claude Code
+
+```bash
+claude plugin marketplace add psyb0t/agents
+claude plugin install gen-asyncapi@psyb0t
+```
+
+### Codex
+
+```bash
+codex plugin marketplace add psyb0t/agents
+codex plugin add gen-asyncapi@psyb0t
+```
+
+Codex also picks the skill up with no install in any checkout of this repo.
+
+### OpenClaw
+
+The skill is published to ClawHub on every release:
+
+```bash
+openclaw skills install @psyb0t/gen-asyncapi
+```
 
 ## Development
 

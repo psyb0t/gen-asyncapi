@@ -2,6 +2,11 @@
 
 All notable changes per release. Versions follow [semver](https://semver.org).
 
+## v0.2.1, 2026-10-15
+
+- Added the `gen-asyncapi` agent skill, which teaches a coding agent how to set up the generator and use the Go and TypeScript code it writes. It installs from the psyb0t Claude Code and Codex marketplaces and from ClawHub with `openclaw skills install @psyb0t/gen-asyncapi`.
+- The README links go-asyncapi for reading specs without generating code, and drops the imported-by badge.
+
 ## v0.2.0, 2026-10-15
 
 - Renamed the project from `gogen-asyncapi` to `gen-asyncapi`, since it now writes more than Go. Change imports, the `go get -tool` line and every `go:generate` line to the new names, then regenerate:

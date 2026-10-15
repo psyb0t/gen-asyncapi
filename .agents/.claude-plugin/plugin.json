@@ -1,0 +1,8 @@
+{
+  "name": "gen-asyncapi",
+  "description": "Generates Go or TypeScript types, strict validation, message dispatch and a WebSocket client from AsyncAPI 3 specs, run from go generate.",
+  "author": { "name": "psyb0t", "url": "https://github.com/psyb0t" },
+  "homepage": "https://github.com/psyb0t/gen-asyncapi",
+  "license": "MIT",
+  "keywords": ["asyncapi", "asyncapi3", "code-generator", "go-generate", "typescript", "websocket"]
+}
