@@ -1,5 +1,6 @@
-// Package gorillaws is an asyncapirt.Transport over gorilla/websocket, the
-// WebSocket library aichteeteapee's wshub already uses.
+// Package gorillaws is an asyncapirt.Transport over gorilla/websocket. Dial
+// opens a connection with optional headers, bearer token, query parameters
+// and subprotocols, and the returned Conn plugs into a generated Client.
 package gorillaws
 
 import (

@@ -75,7 +75,6 @@ linters:
     - tagalign
     - tagliatelle
     - testableexamples
-    # - testpackage
     - thelper
     - tparallel
     - unconvert
@@ -101,22 +100,8 @@ linters:
           allow:
             - $gostd
             - github.com/stretchr/testify/
-            - github.com/pkg/errors
-            - github.com/spf13/viper
-            - github.com/sirupsen/logrus
-            - github.com/google/uuid
             - github.com/psyb0t
-            - github.com/joho/godotenv
-            - github.com/spf13/cobra
             - github.com/gorilla/websocket
-            - github.com/hibiken/asynq
-            - github.com/redis/
-            - github.com/testcontainers/
-            - github.com/labstack/echo/
-            - github.com/getkin/kin-openapi/
-            - github.com/oapi-codegen/
-            - github.com/swaggo/
-            - golang.org/x/net/publicsuffix
             - gopkg.in/yaml.v3
             - golang.org/x/tools/imports
 
@@ -130,7 +115,7 @@ linters:
       - builtin$
       - examples$
     rules:
-      # Exclude cyclop, funlen, and gocognit linters from test files
+      # Table-driven tests are long by design.
       - path: _test\.go
         linters:
           - cyclop

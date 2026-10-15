@@ -2,18 +2,13 @@ name: pipeline
 
 on:
   push:
-  # Refreshes the imported-by badge. WEEKLY, not daily: pkg.go.dev's crawl lags
-  # publication by days, so a daily run re-derives an unchanged number six extra
-  # times a week — and each drags the full test suite along, since the badges
-  # job needs the coverage artifact.
+  # Weekly run that refreshes the imported-by badge. pkg.go.dev updates its
+  # importer count over days, so once a week is enough. It runs the whole
+  # pipeline because the badge job republishes every badge from that run's
+  # results, coverage included.
   #
-  # The WHOLE pipeline, not a badges-only job: the badge publisher wipes its
-  # branch and republishes only what the run produced, so a badges-only refresh
-  # would delete coverage/version/license.
-  #
-  # Slot derived from a hash of the repo name — GitHub cron has no randomness,
-  # and the scheduler sheds queued runs hardest at the round numbers a human
-  # would pick.
+  # The minute and hour come from a hash of the repo name, so this repo's run
+  # does not queue at the same moment as every other scheduled job.
   schedule:
     - cron: "13 2 * * 4"
   workflow_dispatch:
@@ -22,7 +17,7 @@ jobs:
   code:
     permissions:
       contents: read
-      security-events: write # for the sec SARIF upload
+      security-events: write # uploads the security scan SARIF
     uses: psyb0t/reusable-github-workflows/.github/workflows/code-workflow.yml@master
     with:
       lint_command: "make lint"
@@ -43,8 +38,7 @@ jobs:
       coverage: true
       importers: true
 
-  # Cut a GitHub Release on tag pushes once the checks pass (go-workflow did this
-  # inline; code-workflow leaves it to this reusable job).
+  # Publishes a GitHub release for each tag once the checks pass.
   release:
     needs: [code]
     if: startsWith(github.ref, 'refs/tags/')

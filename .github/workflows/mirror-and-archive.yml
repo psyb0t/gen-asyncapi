@@ -21,7 +21,8 @@ jobs:
       gitlab_token: ${{ secrets.GITLAB_TOKEN }}
       codeberg_token: ${{ secrets.CODEBERG_TOKEN }}
 
-  # Off feature-branch pushes -- the archive is rate-limited.
+  # Archives only the default branch and tags, because the Wayback Machine
+  # rate-limits saves.
   archive:
     if: >-
       github.event_name != 'push' ||

@@ -95,7 +95,6 @@ type decl struct {
 	name string
 	doc  string
 
-	// struct
 	fields     []*field
 	strictKeys bool
 	// minProperties/maxProperties are Go literals, "" when unset.
@@ -103,15 +102,12 @@ type decl struct {
 	maxProperties string
 	dependents    []dependent
 
-	// enum
 	enumBase   string
 	enumValues []enumValue
 
-	// union
 	variants          []*variant
 	discriminatorJSON string
 
-	// alias
 	alias *typeRef
 }
 

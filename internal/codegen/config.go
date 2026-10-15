@@ -11,9 +11,9 @@ import (
 
 const defaultOutput = "asyncapi.gen.go"
 
-// Config is the generator configuration file. Its layout follows
-// oapi-codegen's: the spec is a command-line argument, and paths are relative
-// to the directory the generator runs in.
+// Config is the generator configuration file. The spec path comes from the
+// command line, and paths are relative to the directory the generator runs
+// in.
 type Config struct {
 	// Package is the Go package name of the generated file.
 	Package string `yaml:"package"`
@@ -22,7 +22,7 @@ type Config struct {
 	// Generate picks what to generate. Omitted, everything is generated.
 	Generate *GenerateOptions `yaml:"generate"`
 	// OutputOptions tunes the generated code.
-	//nolint:tagliatelle // kebab-case keys follow oapi-codegen
+	//nolint:tagliatelle // config keys are kebab-case by design
 	OutputOptions OutputOptions `yaml:"output-options"`
 }
 
@@ -40,7 +40,7 @@ type OutputOptions struct {
 	// MessageMatchers tells incoming messages apart when the spec gives no
 	// const or discriminator to do it. It maps a message key to JSON pointers
 	// (RFC 6901) into the payload and the value each must hold.
-	//nolint:tagliatelle // kebab-case keys follow oapi-codegen
+	//nolint:tagliatelle // config keys are kebab-case by design
 	MessageMatchers map[string]map[string]any `yaml:"message-matchers"`
 }
 

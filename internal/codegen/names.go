@@ -8,8 +8,7 @@ import (
 )
 
 // isCommonInitialism reports whether an upper-case word is written in full
-// caps inside Go identifiers, following the golint list that oapi-codegen also
-// uses.
+// caps inside Go identifiers, following the golint list.
 func isCommonInitialism(word string) bool {
 	switch word {
 	case "ACL", "API", "ASCII", "CPU", "CSS", "DNS",
