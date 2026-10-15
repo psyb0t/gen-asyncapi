@@ -2,6 +2,10 @@
 
 All notable changes per release. Versions follow [semver](https://semver.org).
 
+## v0.2.2, 2026-10-15
+
+- A `message-matchers` value can be a list, which matches when the pointer holds any of its entries: `/messages/0/type: [notice, info]`. An empty list fails generation. Go matchers gain `asyncapirt.Matcher.AnyOf`; the TypeScript runtime matcher gains `anyOf`. Regenerate to pick up the runtime change.
+
 ## v0.2.1, 2026-10-15
 
 - Added the `gen-asyncapi` agent skill, which teaches a coding agent how to set up the generator and use the Go and TypeScript code it writes. It installs from the psyb0t Claude Code and Codex marketplaces and from ClawHub with `openclaw skills install @psyb0t/gen-asyncapi`.

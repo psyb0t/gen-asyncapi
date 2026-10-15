@@ -123,3 +123,5 @@ output-options:
     Alert:
       /messages/0/type: alert
 ```
+
+A list value such as `[notice, info]` matches any of its entries. An empty list fails generation.

@@ -163,7 +163,11 @@ const receivedMessages: readonly RtCandidate[] = [
 {{- if .Matchers}}
     matchers: [
 {{- range .Matchers}}
+{{- if .AnyOf}}
+      { pointer: {{.Pointer}}, anyOf: {{.AnyOf}} },
+{{- else}}
       { pointer: {{.Pointer}}, value: {{.Value}} },
+{{- end}}
 {{- end}}
     ],
 {{- else}}

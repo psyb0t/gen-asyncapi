@@ -220,7 +220,12 @@ describe("receiving", () => {
       frame({ messages: [{ type: "alert", text: "b" }] }),
     );
 
+    const info = decodeReceivedMessage(
+      frame({ messages: [{ type: "info", text: "c" }] }),
+    );
+
     assert.equal(notice.name, "notice");
+    assert.equal(info.name, "notice", "a list rule takes any of its values");
     assert.equal(alert.name, "alert");
   });
 

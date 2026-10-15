@@ -14,10 +14,12 @@ import (
 )
 
 // Matcher pins the JSON value at Pointer (RFC 6901) to Value, given as JSON
-// text.
+// text. When AnyOf is set, the value must equal one of its JSON texts instead
+// and Value is ignored.
 type Matcher struct {
 	Pointer string
 	Value   string
+	AnyOf   []string
 }
 
 // Candidate is one message a client can receive.
@@ -117,12 +119,26 @@ func decodeOne(data []byte, candidates []Candidate) (string, any, error) {
 
 func matchesAll(document any, matchers []Matcher) bool {
 	for _, matcher := range matchers {
-		if !PointerEquals(document, matcher.Pointer, matcher.Value) {
+		if !matches(document, matcher) {
 			return false
 		}
 	}
 
 	return true
+}
+
+func matches(document any, matcher Matcher) bool {
+	if len(matcher.AnyOf) == 0 {
+		return PointerEquals(document, matcher.Pointer, matcher.Value)
+	}
+
+	for _, expected := range matcher.AnyOf {
+		if PointerEquals(document, matcher.Pointer, expected) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // PointerEquals reports whether the value at pointer inside document equals

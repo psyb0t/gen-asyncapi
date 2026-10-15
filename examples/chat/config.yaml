@@ -5,9 +5,10 @@ generate:
   client: true
 output-options:
   # Notice and Alert have the same shape; only the first item's type tells
-  # them apart, and the spec does not pin it with const.
+  # them apart, and the spec does not pin it with const. A list accepts any of
+  # its values.
   message-matchers:
     Notice:
-      /messages/0/type: notice
+      /messages/0/type: [notice, info]
     Alert:
       /messages/0/type: alert

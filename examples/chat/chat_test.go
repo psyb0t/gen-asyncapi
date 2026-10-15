@@ -315,6 +315,11 @@ func TestDecodeReceivedMessage(t *testing.T) {
 			wantName: chat.MessageNotice,
 		},
 		{
+			name:     "notice by the second value of a list rule",
+			input:    `{"messages":[{"type":"info","text":"maintenance"}]}`,
+			wantName: chat.MessageNotice,
+		},
+		{
 			name:     "alert by config rule",
 			input:    `{"messages":[{"type":"alert","text":"overload"}]}`,
 			wantName: chat.MessageAlert,

@@ -44,9 +44,9 @@ generate:                 # omit the block to generate everything
   models: true            # types, codecs, validation
   client: true            # decoding, Handler, Dispatch, Client; needs models
 output-options:
-  message-matchers:       # message key -> JSON pointer -> required value
+  message-matchers:       # message key -> JSON pointer -> required value or list of allowed values
     Notice:
-      /messages/0/type: notice
+      /messages/0/type: [notice, info]
 ```
 
 Unknown keys fail with `commerr.ErrParseFailed`. Once a `generate` block is present, a key left out of it is false: `generate: {models: true}` means models only.

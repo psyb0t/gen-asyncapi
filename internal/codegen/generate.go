@@ -105,10 +105,14 @@ type messageData struct {
 type matcherData struct {
 	Pointer string
 	Value   string
+	// AnyOf holds the quoted JSON texts of a list matcher; Value is then empty.
+	AnyOf []string
 
-	// pointer is the unquoted JSON pointer and value the expected JSON text.
+	// pointer is the unquoted JSON pointer, value the expected JSON text and
+	// anyOf the JSON texts of a list matcher.
 	pointer string
 	value   string
+	anyOf   []string
 }
 
 type sendData struct {
@@ -333,6 +337,41 @@ func messageHeaders(
 	return headers, nil
 }
 
+// configuredMatcher turns one message-matchers entry into matcher data. A
+// list matches when the value equals any of its items.
+func configuredMatcher(pointer string, rule any) (matcherData, error) {
+	data := matcherData{Pointer: strconv.Quote(pointer), pointer: pointer}
+
+	values, isList := rule.([]any)
+	if !isList {
+		encoded, err := json.Marshal(rule)
+		if err != nil {
+			return data, ctxerrors.Wrapf(commerr.ErrInvalidValue, "%v", err)
+		}
+
+		data.Value = strconv.Quote(string(encoded))
+		data.value = string(encoded)
+
+		return data, nil
+	}
+
+	if len(values) == 0 {
+		return data, ctxerrors.Wrap(commerr.ErrInvalidValue, "empty list")
+	}
+
+	for _, value := range values {
+		encoded, err := json.Marshal(value)
+		if err != nil {
+			return data, ctxerrors.Wrapf(commerr.ErrInvalidValue, "%v", err)
+		}
+
+		data.AnyOf = append(data.AnyOf, strconv.Quote(string(encoded)))
+		data.anyOf = append(data.anyOf, string(encoded))
+	}
+
+	return data, nil
+}
+
 // messageMatchers combines the configured match rules with the consts the
 // payload's top-level properties pin.
 func messageMatchers(
@@ -352,23 +391,17 @@ func messageMatchers(
 	slices.Sort(pointers)
 
 	for _, pointer := range pointers {
-		value, err := json.Marshal(rules[pointer])
+		matcher, err := configuredMatcher(pointer, rules[pointer])
 		if err != nil {
 			return nil, ctxerrors.Wrapf(
-				commerr.ErrInvalidValue,
-				"message %s match %s: %v",
+				err,
+				"message %s match %s",
 				key,
 				pointer,
-				err,
 			)
 		}
 
-		matchers = append(matchers, matcherData{
-			Pointer: strconv.Quote(pointer),
-			Value:   strconv.Quote(string(value)),
-			pointer: pointer,
-			value:   string(value),
-		})
+		matchers = append(matchers, matcher)
 	}
 
 	if payload.kind != refNamed || payload.decl.kind != declStruct {

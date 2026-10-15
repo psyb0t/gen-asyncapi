@@ -400,9 +400,11 @@ function rtPointer(document: unknown, pointer: string): [unknown, boolean] {
 }
 
 //@rt rtDecodeMessage
+// A matcher pins the value at pointer to value, or to any item of anyOf.
 interface RtMatcher {
   readonly pointer: string;
-  readonly value: unknown;
+  readonly value?: unknown;
+  readonly anyOf?: readonly unknown[];
 }
 
 interface RtCandidate {
@@ -415,8 +417,15 @@ interface RtCandidate {
 function rtMatchesAll(document: unknown, matchers: readonly RtMatcher[]): boolean {
   return matchers.every((matcher) => {
     const [actual, found] = rtPointer(document, matcher.pointer);
+    if (!found) {
+      return false;
+    }
 
-    return found && rtCanonical(actual) === rtCanonical(matcher.value);
+    const allowed = matcher.anyOf ?? [matcher.value];
+
+    return allowed.some(
+      (expected) => rtCanonical(actual) === rtCanonical(expected),
+    );
   });
 }
 

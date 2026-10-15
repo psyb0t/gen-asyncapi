@@ -958,7 +958,7 @@ var receivedMessages = []asyncapirt.Candidate{
 	{
 		Name: MessageNotice,
 		Matchers: []asyncapirt.Matcher{
-			{Pointer: "/messages/0/type", Value: "\"notice\""},
+			{Pointer: "/messages/0/type", AnyOf: []string{"\"notice\"", "\"info\""}},
 		},
 		Decode: func(data []byte) (any, error) {
 			var payload NoticeEnvelope

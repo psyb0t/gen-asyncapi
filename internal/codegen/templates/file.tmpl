@@ -414,7 +414,11 @@ var receivedMessages = []asyncapirt.Candidate{
 {{- if .Matchers}}
 		Matchers: []asyncapirt.Matcher{
 {{- range .Matchers}}
+{{- if .AnyOf}}
+			{Pointer: {{.Pointer}}, AnyOf: []string{ {{- join .AnyOf ", " -}} }},
+{{- else}}
 			{Pointer: {{.Pointer}}, Value: {{.Value}}},
+{{- end}}
 {{- end}}
 		},
 {{- end}}

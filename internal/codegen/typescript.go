@@ -115,6 +115,8 @@ type tsMessageData struct {
 type tsMatcherData struct {
 	Pointer string
 	Value   string
+	// AnyOf is an array literal of the allowed values of a list matcher.
+	AnyOf string
 }
 
 type tsSendData struct {
@@ -591,10 +593,15 @@ func tsMessages(messages []messageData) []tsMessageData {
 		}
 
 		for _, matcher := range message.Matchers {
-			data.Matchers = append(data.Matchers, tsMatcherData{
+			rendered := tsMatcherData{
 				Pointer: tsQuote(matcher.pointer),
 				Value:   matcher.value,
-			})
+			}
+			if len(matcher.anyOf) > 0 {
+				rendered.AnyOf = tsArray(matcher.anyOf)
+			}
+
+			data.Matchers = append(data.Matchers, rendered)
 		}
 
 		result = append(result, data)

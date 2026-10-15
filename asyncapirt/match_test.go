@@ -90,6 +90,13 @@ func TestDecodeMessage(t *testing.T) {
 		Decode:   decodeInto[json.RawMessage],
 		Fallback: true,
 	}
+	pinnedAnyOf := asyncapirt.Candidate{
+		Name: "pinnedAnyOf",
+		Matchers: []asyncapirt.Matcher{
+			{Pointer: "/kind", AnyOf: []string{`"x"`, `"y"`}},
+		},
+		Decode: decodeInto[map[string]any],
+	}
 	pinnedNumber := asyncapirt.Candidate{
 		Name:     "pinnedNumber",
 		Matchers: []asyncapirt.Matcher{{Pointer: "/items/1/n", Value: `2`}},
@@ -114,6 +121,18 @@ func TestDecodeMessage(t *testing.T) {
 			input:      kindBInput,
 			candidates: []asyncapirt.Candidate{pinnedA, strict},
 			wantName:   strictName,
+		},
+		{
+			name:       "any-of matcher takes each listed value",
+			input:      `{"kind":"y"}`,
+			candidates: []asyncapirt.Candidate{strict, pinnedAnyOf},
+			wantName:   "pinnedAnyOf",
+		},
+		{
+			name:       "any-of matcher rejects an unlisted value",
+			input:      `{"kind":"z"}`,
+			candidates: []asyncapirt.Candidate{pinnedAnyOf},
+			wantErr:    asyncapirt.ErrUnknownMessage,
 		},
 		{
 			name:       "numbers in arrays compare by value",

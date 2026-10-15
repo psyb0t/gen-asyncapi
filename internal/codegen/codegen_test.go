@@ -306,6 +306,22 @@ func TestGenerateRejectsUnknownMatcherMessage(t *testing.T) {
 	require.ErrorIs(t, err, commerr.ErrNotFound)
 }
 
+func TestGenerateRejectsEmptyMatcherList(t *testing.T) {
+	t.Parallel()
+
+	config, err := LoadConfig(
+		writeConfig(
+			t,
+			"package: chat\noutput-options:\n  message-matchers:\n    Notice:\n      /messages/0/type: []\n",
+		),
+	)
+	require.NoError(t, err)
+	require.NoError(t, config.Validate())
+
+	_, err = Generate(config, chatSpec())
+	require.ErrorIs(t, err, commerr.ErrInvalidValue)
+}
+
 func TestGenerateModelsOnly(t *testing.T) {
 	t.Parallel()
 

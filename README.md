@@ -80,7 +80,7 @@ generate:
 output-options:
   message-matchers:       # see "Telling messages apart"
     Notice:
-      /messages/0/type: notice
+      /messages/0/type: [notice, info]
 ```
 
 ## Examples
@@ -286,6 +286,8 @@ output-options:
     Alert:
       /messages/0/type: alert
 ```
+
+A list value matches when the pointer holds any of its entries, so `/messages/0/type: [notice, info]` takes both. An empty list fails generation.
 
 ### Servers and channels
 
