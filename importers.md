@@ -1,7 +1,7 @@
 # Imported by
 
-The importer count for `github.com/psyb0t/gogen-asyncapi` could not be read from
-[pkg.go.dev](https://pkg.go.dev/github.com/psyb0t/gogen-asyncapi?tab=importedby) on this run.
+The importer count for `github.com/psyb0t/gen-asyncapi` could not be read from
+[pkg.go.dev](https://pkg.go.dev/github.com/psyb0t/gen-asyncapi?tab=importedby) on this run.
 
 This is reported as `unknown` rather than `0` on purpose: a module that
 nothing imports and a page that could not be parsed are different facts,
