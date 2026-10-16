@@ -123,6 +123,15 @@ func TestItemConstraints(t *testing.T) {
 			wantErr: commerr.ErrValidationFailed,
 		},
 		{
+			name:  "optional array with minItems present",
+			input: withMember(t, "aliases", []string{colorRed}),
+		},
+		{
+			name:    "optional array present but below minItems",
+			input:   withMember(t, "aliases", []string{}),
+			wantErr: commerr.ErrValidationFailed,
+		},
+		{
 			name:    "short password",
 			input:   withMember(t, "password", "short"),
 			wantErr: commerr.ErrValidationFailed,

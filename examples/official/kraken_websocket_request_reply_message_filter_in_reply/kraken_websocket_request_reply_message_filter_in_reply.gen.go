@@ -422,9 +422,11 @@ func (v SubscriptionStatusError) MarshalJSON() ([]byte, error) {
 
 // Validate checks the constraints the schema declares for SubscriptionStatusError.
 func (v SubscriptionStatusError) Validate() error {
-	for i0, item0 := range v.Pair {
-		if err := asyncapirt.CheckPattern(fmt.Sprintf("%s[%d]", "pair", i0), string(item0), "[A-Z\\s]+\\/[A-Z\\s]+"); err != nil {
-			return err
+	if v.Pair != nil {
+		for i0, item0 := range v.Pair {
+			if err := asyncapirt.CheckPattern(fmt.Sprintf("%s[%d]", "pair", i0), string(item0), "[A-Z\\s]+\\/[A-Z\\s]+"); err != nil {
+				return err
+			}
 		}
 	}
 	if v.Status != nil {
@@ -642,9 +644,11 @@ func (v SubscriptionStatusSuccess) MarshalJSON() ([]byte, error) {
 
 // Validate checks the constraints the schema declares for SubscriptionStatusSuccess.
 func (v SubscriptionStatusSuccess) Validate() error {
-	for i0, item0 := range v.Pair {
-		if err := asyncapirt.CheckPattern(fmt.Sprintf("%s[%d]", "pair", i0), string(item0), "[A-Z\\s]+\\/[A-Z\\s]+"); err != nil {
-			return err
+	if v.Pair != nil {
+		for i0, item0 := range v.Pair {
+			if err := asyncapirt.CheckPattern(fmt.Sprintf("%s[%d]", "pair", i0), string(item0), "[A-Z\\s]+\\/[A-Z\\s]+"); err != nil {
+				return err
+			}
 		}
 	}
 	if v.Status != nil {
@@ -717,9 +721,11 @@ func (v Subscribe) MarshalJSON() ([]byte, error) {
 
 // Validate checks the constraints the schema declares for Subscribe.
 func (v Subscribe) Validate() error {
-	for i0, item0 := range v.Pair {
-		if err := asyncapirt.CheckPattern(fmt.Sprintf("%s[%d]", "pair", i0), string(item0), "[A-Z\\s]+\\/[A-Z\\s]+"); err != nil {
-			return err
+	if v.Pair != nil {
+		for i0, item0 := range v.Pair {
+			if err := asyncapirt.CheckPattern(fmt.Sprintf("%s[%d]", "pair", i0), string(item0), "[A-Z\\s]+\\/[A-Z\\s]+"); err != nil {
+				return err
+			}
 		}
 	}
 	if v.Subscription != nil {
@@ -855,9 +861,11 @@ func (v Unsubscribe) MarshalJSON() ([]byte, error) {
 
 // Validate checks the constraints the schema declares for Unsubscribe.
 func (v Unsubscribe) Validate() error {
-	for i0, item0 := range v.Pair {
-		if err := asyncapirt.CheckPattern(fmt.Sprintf("%s[%d]", "pair", i0), string(item0), "[A-Z\\s]+\\/[A-Z\\s]+"); err != nil {
-			return err
+	if v.Pair != nil {
+		for i0, item0 := range v.Pair {
+			if err := asyncapirt.CheckPattern(fmt.Sprintf("%s[%d]", "pair", i0), string(item0), "[A-Z\\s]+\\/[A-Z\\s]+"); err != nil {
+				return err
+			}
 		}
 	}
 	if v.Subscription != nil {
@@ -1042,9 +1050,11 @@ func (v SubscriptionStatusCommon) MarshalJSON() ([]byte, error) {
 
 // Validate checks the constraints the schema declares for SubscriptionStatusCommon.
 func (v SubscriptionStatusCommon) Validate() error {
-	for i0, item0 := range v.Pair {
-		if err := asyncapirt.CheckPattern(fmt.Sprintf("%s[%d]", "pair", i0), string(item0), "[A-Z\\s]+\\/[A-Z\\s]+"); err != nil {
-			return err
+	if v.Pair != nil {
+		for i0, item0 := range v.Pair {
+			if err := asyncapirt.CheckPattern(fmt.Sprintf("%s[%d]", "pair", i0), string(item0), "[A-Z\\s]+\\/[A-Z\\s]+"); err != nil {
+				return err
+			}
 		}
 	}
 	if v.Status != nil {

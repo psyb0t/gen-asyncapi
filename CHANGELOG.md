@@ -2,6 +2,10 @@
 
 All notable changes per release. Versions follow [semver](https://semver.org).
 
+## v0.2.3, 2026-10-16
+
+- Generated Go validation skips the constraints of an optional array, map or raw JSON field when it is absent, and of a nullable one when it is null. Before, an absent optional array with `minItems` failed validation. Regenerate to pick up the fix.
+
 ## v0.2.2, 2026-10-15
 
 - A `message-matchers` value can be a list, which matches when the pointer holds any of its entries: `/messages/0/type: [notice, info]`. An empty list fails generation. Go matchers gain `asyncapirt.Matcher.AnyOf`; the TypeScript runtime matcher gains `anyOf`. Regenerate to pick up the runtime change.

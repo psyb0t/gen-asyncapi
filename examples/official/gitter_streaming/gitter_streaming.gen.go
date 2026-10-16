@@ -85,14 +85,18 @@ func (v ChatMessagePayload) Validate() error {
 			return ctxerrors.Wrap(err, "fromUser")
 		}
 	}
-	for i0, item0 := range v.Mentions {
-		if err := item0.Validate(); err != nil {
-			return ctxerrors.Wrap(err, fmt.Sprintf("%s[%d]", "mentions", i0))
+	if v.Mentions != nil {
+		for i0, item0 := range v.Mentions {
+			if err := item0.Validate(); err != nil {
+				return ctxerrors.Wrap(err, fmt.Sprintf("%s[%d]", "mentions", i0))
+			}
 		}
 	}
-	for i0, item0 := range v.Issues {
-		if err := item0.Validate(); err != nil {
-			return ctxerrors.Wrap(err, fmt.Sprintf("%s[%d]", "issues", i0))
+	if v.Issues != nil {
+		for i0, item0 := range v.Issues {
+			if err := item0.Validate(); err != nil {
+				return ctxerrors.Wrap(err, fmt.Sprintf("%s[%d]", "issues", i0))
+			}
 		}
 	}
 

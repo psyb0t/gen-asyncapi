@@ -209,14 +209,24 @@ func fieldValidation(structField *field) []string {
 	name := strconv.Quote(structField.jsonName)
 	target := "v." + structField.goName
 
-	if !structField.pointer {
+	// An absent optional or null nullable slice, map or raw JSON value is its
+	// nil zero value, and its constraints only apply when it is present.
+	isAbsentAsNil := structField.ref.isNillable() &&
+		(!structField.required || structField.nullable)
+
+	if !structField.pointer && !isAbsentAsNil {
 		return validationLines(target, structField.ref, name, 0)
+	}
+
+	checked := target
+	if structField.pointer {
+		checked = "(*" + target + ")"
 	}
 
 	lines := []string{"if " + target + " != nil {"}
 	lines = append(
 		lines,
-		validationLines("(*"+target+")", structField.ref, name, 0)...,
+		validationLines(checked, structField.ref, name, 0)...,
 	)
 
 	return append(lines, "}")

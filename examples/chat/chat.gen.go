@@ -166,8 +166,10 @@ func (v SayRequest) Validate() error {
 	if err := asyncapirt.CheckMinLength("text", string(v.Text), 1); err != nil {
 		return err
 	}
-	if err := asyncapirt.CheckMaxItems("mentions", len(v.Mentions), 5); err != nil {
-		return err
+	if v.Mentions != nil {
+		if err := asyncapirt.CheckMaxItems("mentions", len(v.Mentions), 5); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -440,9 +442,11 @@ func (v MessagePosted) Validate() error {
 	if err := v.Author.Validate(); err != nil {
 		return ctxerrors.Wrap(err, "author")
 	}
-	for i0, item0 := range v.Attachments {
-		if err := item0.Validate(); err != nil {
-			return ctxerrors.Wrap(err, fmt.Sprintf("%s[%d]", "attachments", i0))
+	if v.Attachments != nil {
+		for i0, item0 := range v.Attachments {
+			if err := item0.Validate(); err != nil {
+				return ctxerrors.Wrap(err, fmt.Sprintf("%s[%d]", "attachments", i0))
+			}
 		}
 	}
 

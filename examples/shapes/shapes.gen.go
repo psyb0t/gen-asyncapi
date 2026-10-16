@@ -57,9 +57,11 @@ func (v *Node) UnmarshalJSON(data []byte) error {
 
 // Validate checks the constraints the schema declares for Node.
 func (v Node) Validate() error {
-	for i0, item0 := range v.Children {
-		if err := item0.Validate(); err != nil {
-			return ctxerrors.Wrap(err, fmt.Sprintf("%s[%d]", "children", i0))
+	if v.Children != nil {
+		for i0, item0 := range v.Children {
+			if err := item0.Validate(); err != nil {
+				return ctxerrors.Wrap(err, fmt.Sprintf("%s[%d]", "children", i0))
+			}
 		}
 	}
 

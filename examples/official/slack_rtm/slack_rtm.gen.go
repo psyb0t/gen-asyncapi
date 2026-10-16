@@ -3219,9 +3219,11 @@ func (v MessagePayload) MarshalJSON() ([]byte, error) {
 
 // Validate checks the constraints the schema declares for MessagePayload.
 func (v MessagePayload) Validate() error {
-	for i0, item0 := range v.Attachments {
-		if err := item0.Validate(); err != nil {
-			return ctxerrors.Wrap(err, fmt.Sprintf("%s[%d]", "attachments", i0))
+	if v.Attachments != nil {
+		for i0, item0 := range v.Attachments {
+			if err := item0.Validate(); err != nil {
+				return ctxerrors.Wrap(err, fmt.Sprintf("%s[%d]", "attachments", i0))
+			}
 		}
 	}
 	if v.Edited != nil {
@@ -3278,9 +3280,11 @@ func (v *Attachment) UnmarshalJSON(data []byte) error {
 
 // Validate checks the constraints the schema declares for Attachment.
 func (v Attachment) Validate() error {
-	for i0, item0 := range v.Fields {
-		if err := item0.Validate(); err != nil {
-			return ctxerrors.Wrap(err, fmt.Sprintf("%s[%d]", "fields", i0))
+	if v.Fields != nil {
+		for i0, item0 := range v.Fields {
+			if err := item0.Validate(); err != nil {
+				return ctxerrors.Wrap(err, fmt.Sprintf("%s[%d]", "fields", i0))
+			}
 		}
 	}
 

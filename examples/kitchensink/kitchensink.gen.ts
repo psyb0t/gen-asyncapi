@@ -159,6 +159,7 @@ export interface Item {
   dimensions: Dimensions;
   attributes?: Record<string, string>;
   counters?: Record<string, number>;
+  aliases?: Array<string>;
   /**
    * Deprecated: the schema marks this as deprecated.
    */
@@ -212,7 +213,7 @@ export function validateItem(
 ): asserts value is Item {
   const object = rtObject(value, path);
   rtRequire(path, object, ["sku", "price", "quantity", "tags", "dimensions"]);
-  rtKnownKeys(path, object, ["sku", "price", "quantity", "weight", "tags", "dimensions", "attributes", "counters", "legacyCode", "password", "status", "priority", "ratio", "coordinates", "anything", "notNull", "shipping", "email", "homepage", "birthday", "blob", "mixed"]);
+  rtKnownKeys(path, object, ["sku", "price", "quantity", "weight", "tags", "dimensions", "attributes", "counters", "aliases", "legacyCode", "password", "status", "priority", "ratio", "coordinates", "anything", "notNull", "shipping", "email", "homepage", "birthday", "blob", "mixed"]);
   rtMinProperties(path, Object.keys(object).length, 5);
   rtMaxProperties(path, Object.keys(object).length, 12);
   const v1 = rtString(object["sku"], path + ".sku");
@@ -251,12 +252,19 @@ export function validateItem(
       rtMinimum(path + ".counters" + "." + k13, v15, 0);
     }
   }
+  if (object["aliases"] !== undefined) {
+    const a16 = rtArray(object["aliases"], path + ".aliases");
+    rtMinItems(path + ".aliases", a16.length, 1);
+    for (let i17 = 0; i17 < a16.length; i17++) {
+      rtString(a16[i17], path + ".aliases" + "[" + i17 + "]");
+    }
+  }
   if (object["legacyCode"] !== undefined) {
     rtString(object["legacyCode"], path + ".legacyCode");
   }
   if (object["password"] !== undefined) {
-    const v17 = rtString(object["password"], path + ".password");
-    rtMinLength(path + ".password", v17, 8);
+    const v20 = rtString(object["password"], path + ".password");
+    rtMinLength(path + ".password", v20, 8);
   }
   if (object["status"] !== undefined) {
     validateStatus(object["status"], path + ".status");

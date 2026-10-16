@@ -227,6 +227,11 @@ components:
           propertyNames:
             pattern: '^[a-z]+$'
           maxProperties: 3
+        aliases:
+          type: array
+          minItems: 1
+          items:
+            type: string
         legacyCode:
           type: string
           deprecated: true

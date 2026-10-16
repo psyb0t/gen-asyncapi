@@ -271,6 +271,7 @@ type Item struct {
 	Dimensions Dimensions        `json:"dimensions"`
 	Attributes map[string]string `json:"attributes,omitempty"`
 	Counters   map[string]int64  `json:"counters,omitempty"`
+	Aliases    []string          `json:"aliases,omitempty"`
 	// Deprecated: the schema marks this as deprecated.
 	LegacyCode *string `json:"legacyCode,omitempty"`
 	Password   *string `json:"password,omitempty"`
@@ -310,7 +311,7 @@ func (v *Item) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	if err := asyncapirt.RejectUnknownKeys("Item", members, "sku", "price", "quantity", "weight", "tags", "dimensions", "attributes", "counters", "legacyCode", "password", "status", "priority", "ratio", "coordinates", "anything", "notNull", "shipping", "email", "homepage", "birthday", "blob", "mixed"); err != nil {
+	if err := asyncapirt.RejectUnknownKeys("Item", members, "sku", "price", "quantity", "weight", "tags", "dimensions", "attributes", "counters", "aliases", "legacyCode", "password", "status", "priority", "ratio", "coordinates", "anything", "notNull", "shipping", "email", "homepage", "birthday", "blob", "mixed"); err != nil {
 		return err
 	}
 
@@ -368,21 +369,30 @@ func (v Item) Validate() error {
 	if err := v.Dimensions.Validate(); err != nil {
 		return ctxerrors.Wrap(err, "dimensions")
 	}
-	for key := range v.Attributes {
-		if err := asyncapirt.CheckPattern("attributes"+"."+key, key, "^x-[a-z]+$"); err != nil {
-			return err
+	if v.Attributes != nil {
+		for key := range v.Attributes {
+			if err := asyncapirt.CheckPattern("attributes"+"."+key, key, "^x-[a-z]+$"); err != nil {
+				return err
+			}
 		}
 	}
-	if err := asyncapirt.CheckMaxProperties("counters", len(v.Counters), 3); err != nil {
-		return err
-	}
-	for key := range v.Counters {
-		if err := asyncapirt.CheckPattern("counters"+"."+key, key, "^[a-z]+$"); err != nil {
+	if v.Counters != nil {
+		if err := asyncapirt.CheckMaxProperties("counters", len(v.Counters), 3); err != nil {
 			return err
 		}
+		for key := range v.Counters {
+			if err := asyncapirt.CheckPattern("counters"+"."+key, key, "^[a-z]+$"); err != nil {
+				return err
+			}
+		}
+		for key0, value0 := range v.Counters {
+			if err := asyncapirt.CheckMinimum("counters"+"."+key0, float64(value0), 0); err != nil {
+				return err
+			}
+		}
 	}
-	for key0, value0 := range v.Counters {
-		if err := asyncapirt.CheckMinimum("counters"+"."+key0, float64(value0), 0); err != nil {
+	if v.Aliases != nil {
+		if err := asyncapirt.CheckMinItems("aliases", len(v.Aliases), 1); err != nil {
 			return err
 		}
 	}
@@ -1132,9 +1142,11 @@ func (v *Tree) UnmarshalJSON(data []byte) error {
 
 // Validate checks the constraints the schema declares for Tree.
 func (v Tree) Validate() error {
-	for i0, item0 := range v.Children {
-		if err := item0.Validate(); err != nil {
-			return ctxerrors.Wrap(err, fmt.Sprintf("%s[%d]", "children", i0))
+	if v.Children != nil {
+		for i0, item0 := range v.Children {
+			if err := item0.Validate(); err != nil {
+				return ctxerrors.Wrap(err, fmt.Sprintf("%s[%d]", "children", i0))
+			}
 		}
 	}
 

@@ -45,6 +45,7 @@ describe("object constraints", () => {
         tags: ["aa", "bb", "cc", "dd", "ee", "ff", "gg", "hh", "ii", "jj"],
       }),
     );
+    validateItem(item({ aliases: ["a"] }));
   });
 
   const cases: {
@@ -76,6 +77,11 @@ describe("object constraints", () => {
       name: "an empty tag list under minItems",
       overrides: { tags: [] },
       path: "Item.tags",
+    },
+    {
+      name: "an empty optional list under minItems",
+      overrides: { aliases: [] },
+      path: "Item.aliases",
     },
     {
       name: "a map key outside the key pattern",
