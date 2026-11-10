@@ -25,9 +25,10 @@ htmlcov/
 __pycache__
 node_modules/
 *.out
-CLAUDE.md
 CLAUDE.local.md
-.claude
+# A vendored module ships its own CLAUDE.md; it was never committed.
+vendor/**/CLAUDE.md
+*.local.json
 .research_files
 .refactor/
 .anustimes/

@@ -2,9 +2,10 @@ DEV_IMAGE := gen-asyncapi-dev
 UID := $(shell id -u)
 GID := $(shell id -g)
 MIN_TEST_COVERAGE := 90
+DOCS_SITE := .testing/docs-site
 
 # Every Go and tooling command runs inside the dev image, so the toolchain
-# (Go 1.26.9), the linter and the security scanners are identical in a local
+# (Go 1.26.10), the linter and the security scanners are identical in a local
 # shell and in CI. The workspace is bind-mounted; caches go to /tmp so the
 # non-root run needs no writable GOPATH. CGO stays on for the race detector.
 DEV_RUN := docker run --rm --init \
@@ -21,7 +22,7 @@ DEV_RUN := docker run --rm --init \
 	$(DEV_IMAGE)
 
 .PHONY: all dev-image dep format generate lint lint-fix shell test test-unit \
-	test-coverage test-ts sec pkg-lock pkg-add pkg-update pkg-upgrade \
+	test-coverage test-ts sec docs pkg-lock pkg-add pkg-update pkg-upgrade \
 	pkg-remove help
 
 all: dep lint test ## Run dep, lint and test
@@ -85,6 +86,21 @@ pkg-remove: dev-image ## Remove a TypeScript dev dependency: make pkg-remove PKG
 
 sec: dev-image ## Security scan (gitleaks, govulncheck, pnpm audit, semgrep) merged into sec.sarif; gates on findings
 	@$(DEV_RUN) bash scripts/sec.sh
+
+# Builds docs/ with the image GitHub Pages uses, so the local result matches
+# the published site. The output directory is gitignored.
+docs: ## Build the documentation site into .testing/docs-site
+	@mkdir -p "$(DOCS_SITE)"
+	docker run --rm \
+		--user $(UID):$(GID) \
+		-e HOME=/tmp \
+		-e GITHUB_WORKSPACE=/work \
+		-e GITHUB_REPOSITORY=psyb0t/gen-asyncapi \
+		-e INPUT_SOURCE=docs \
+		-e INPUT_DESTINATION="$(DOCS_SITE)" \
+		-e INPUT_VERBOSE=false \
+		-v "$(CURDIR):/work" \
+		ghcr.io/actions/jekyll-build-pages:v1.0.13@sha256:6791ebfd912185ed59bfb5fb102664fa872496b79f87ff8b9cfba292a7345041
 
 help: ## Display this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

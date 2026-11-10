@@ -2,6 +2,13 @@
 
 All notable changes per release. Versions follow [semver](https://semver.org).
 
+## v0.2.4, 2026-11-10
+
+- The documentation is published at [psyb0t.github.io/gen-asyncapi](https://psyb0t.github.io/gen-asyncapi/). The config reference, the generated Go and TypeScript API, message matching, the examples and the agent install steps moved there from the README, which keeps the quick start.
+- A release tag no longer reruns the checks: it waits for that commit's `main` run to pass, then cuts the GitHub release and publishes the agent skill to ClawHub. The pipeline can no longer be started by hand.
+- The dev image moves to Go 1.26.10 and newer Node.js, pnpm and Python.
+- The funding links include Buy Me a Coffee, and `AGENTS.md` and the project rules in `.agents/rules/` for coding agents are rewritten and extended.
+
 ## v0.2.3, 2026-10-16
 
 - Generated Go validation skips the constraints of an optional array, map or raw JSON field when it is absent, and of a nullable one when it is null. Before, an absent optional array with `minItems` failed validation. Regenerate to pick up the fix.

@@ -1,6 +1,13 @@
+---
+title: "AsyncAPI 3 coverage"
+description: "What gen-asyncapi does with every AsyncAPI 3.0 document object and every JSON Schema keyword, one row each, checked against the kitchensink example."
+nav_order: 1
+parent: "What gets generated"
+---
+
 # AsyncAPI 3 coverage
 
-What the generator does with each part of an AsyncAPI 3.0 document. [examples/kitchensink](../examples/kitchensink/kitchensink.yaml) uses every row and validates against the official 3.0 JSON Schema.
+What the generator does with each part of an AsyncAPI 3.0 document. [examples/kitchensink](https://github.com/psyb0t/gen-asyncapi/blob/main/examples/kitchensink/kitchensink.yaml) uses every row and validates against the official 3.0 JSON Schema.
 
 ## Document objects
 
